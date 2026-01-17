@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OCR Diagnostic</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --card: #12121a;
+            --border: #2a2a3e;
+            --text: #e0e0e0;
+            --muted: #666;
+            --green: #48bb78;
+            --yellow: #c9b458;
+            --red: #e53e3e;
+            --purple: #667eea;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 16px;
+            min-height: 100vh;
+        }
+        h1 { font-size: 1.2rem; margin-bottom: 16px; }
+        
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .log {
+            font-family: monospace;
+            font-size: 0.75rem;
+            background: #000;
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #222;
+        }
+        
+        .log-entry.info { color: var(--text); }
+        .log-entry.success { color: var(--green); }
+        .log-entry.warn { color: var(--yellow); }
+        .log-entry.error { color: var(--red); }
+        .log-entry.progress { color: var(--purple); }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            margin-bottom: 8px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .btn:disabled { opacity: 0.5; }
+        
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        
+        .preview {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+            margin: 12px 0;
+            display: none;
+        }
+        
+        .preview.visible { display: block; }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .stat {
+            background: var(--bg);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value { font-size: 1.2rem; font-weight: 700; color: var(--purple); }
+        .stat-label { font-size: 0.7rem; color: var(--muted); }
+        
+        input[type="file"] { display: none; }
+        
+        .method-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .method-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        
+        .method-card p {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        
+        .method-card .time {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .method-card .time.fast { background: rgba(72,187,120,0.2); color: var(--green); }
+        .method-card .time.slow { background: rgba(229,62,62,0.2); color: var(--red); }
+    </style>
+</head>
+<body>
+    <h1>🔬 OCR Diagnostic Tool</h1>
+    
+    <div class="card">
+        <h3 style="margin-bottom: 8px;">Device Info</h3>
+        <div id="device-info" class="log" style="max-height: 80px;"></div>
+    </div>
+    
+    <div class="card">
+        <div class="upload-zone" id="upload-zone">
+            📷 Tap to upload screenshot
+        </div>
+        <input type="file" id="file-input" accept="image/*">
+        <img class="preview" id="preview">
+    </div>
+    
+    <div class="card">
+        <h3 style="margin-bottom: 12px;">OCR Methods</h3>
+        
+        <div class="method-card">
+            <h3>1️⃣ Tesseract.js v5 (Standard)</h3>
+            <p>Full OCR engine in browser. Downloads ~15MB.</p>
+            <span class="time slow">10-60+ seconds on mobile</span>
+            <button class="btn btn-secondary" id="btn-tesseract" onclick="runTesseract()" disabled>
+                Run Tesseract
+            </button>
+        </div>
+        
+        <div class="method-card">
+            <h3>2️⃣ Tesseract.js (Minimal)</h3>
+            <p>Smaller config, English only, lower quality.</p>
+            <span class="time slow">5-30 seconds on mobile</span>
+            <button class="btn btn-secondary" id="btn-tesseract-min" onclick="runTesseractMinimal()" disabled>
+                Run Minimal
+            </button>
+        </div>
+        
+        <div class="method-card">
+            <h3>3️⃣ Skip OCR - Manual Entry</h3>
+            <p>Just ask user to type their streak/stats.</p>
+            <span class="time fast">Instant</span>
+            <button class="btn btn-primary" id="btn-manual" onclick="showManualEntry()" disabled>
+                Try Manual Entry
+            </button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3 style="margin-bottom: 8px;">Activity Log</h3>
+        <div id="log" class="log"></div>
+    </div>
+    
+    <div class="card" id="results-card" style="display: none;">
+        <h3 style="margin-bottom: 8px;">Results</h3>
+        <div id="ocr-text" class="log" style="max-height: 150px;"></div>
+        <div class="stats" id="extracted-stats"></div>
+    </div>
+    
+    <!-- Manual Entry Modal -->
+    <div id="manual-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); padding: 20px; z-index: 100;">
+        <div class="card">
+            <h3 style="margin-bottom: 12px;">Quick Stats Entry</h3>
+            <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">
+                Since OCR is slow, just type your stats:
+            </p>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; color: var(--muted);">Current Streak</label>
+                <input type="number" id="manual-streak" placeholder="e.g. 42" 
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem;">
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; color: var(--muted);">Games Played</label>
+                <input type="number" id="manual-played" placeholder="e.g. 234"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem;">
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 0.8rem; color: var(--muted);">Win %</label>
+                <input type="number" id="manual-win" placeholder="e.g. 98"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem;">
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveManualEntry()">Save</button>
+            <button class="btn btn-secondary" onclick="closeManualModal()" style="margin-top: 8px;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // ============ LOGGING ============
+        const logEl = document.getElementById('log');
+        
+        function log(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${time}] ${msg}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`[${type}] ${msg}`);
+        }
+        
+        // ============ DEVICE INFO ============
+        function showDeviceInfo() {
+            const info = document.getElementById('device-info');
+            const ua = navigator.userAgent;
+            
+            let device = 'Unknown';
+            if (/iPhone/.test(ua)) device = 'iPhone';
+            else if (/iPad/.test(ua)) device = 'iPad';
+            else if (/Android/.test(ua)) device = 'Android';
+            else device = 'Desktop';
+            
+            let browser = 'Unknown';
+            if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+            else if (/Chrome/.test(ua)) browser = 'Chrome';
+            else if (/Firefox/.test(ua)) browser = 'Firefox';
+            
+            info.innerHTML = `Device: ${device}\nBrowser: ${browser}\nMemory: ${navigator.deviceMemory || 'N/A'} GB\nCores: ${navigator.hardwareConcurrency || 'N/A'}`;
+            
+            log(`Device: ${device}, Browser: ${browser}`);
+        }
+        
+        // ============ FILE HANDLING ============
+        let currentImage = null;
+        
+        document.getElementById('upload-zone').onclick = () => document.getElementById('file-input').click();
+        document.getElementById('file-input').onchange = (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        };
+        
+        function handleFile(file) {
+            log(`Loading image: ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                
+                const preview = document.getElementById('preview');
+                preview.src = currentImage;
+                preview.classList.add('visible');
+                
+                // Enable buttons
+                document.getElementById('btn-tesseract').disabled = false;
+                document.getElementById('btn-tesseract-min').disabled = false;
+                document.getElementById('btn-manual').disabled = false;
+                
+                log('Image loaded successfully', 'success');
+                
+                // Get image dimensions
+                const img = new Image();
+                img.onload = () => {
+                    log(`Dimensions: ${img.width}x${img.height}`);
+                };
+                img.src = currentImage;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // ============ TESSERACT STANDARD ============
+        let tesseractLoaded = false;
+        
+        async function runTesseract() {
+            if (!currentImage) return;
+            
+            const btn = document.getElementById('btn-tesseract');
+            btn.disabled = true;
+            btn.textContent = 'Loading Tesseract...';
+            
+            const startTime = performance.now();
+            
+            try {
+                // Load script
+                if (typeof Tesseract === 'undefined') {
+                    log('Downloading Tesseract.js (~2MB)...');
+                    await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+                    log('Tesseract.js loaded', 'success');
+                }
+                
+                // Create worker
+                log('Creating worker (downloads ~15MB language data)...');
+                btn.textContent = 'Downloading language data...';
+                
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    logger: m => {
+                        if (m.status) {
+                            log(`${m.status}: ${Math.round((m.progress || 0) * 100)}%`, 'progress');
+                            btn.textContent = `${m.status} ${Math.round((m.progress || 0) * 100)}%`;
+                        }
+                    }
+                });
+                
+                log('Worker ready, starting recognition...', 'success');
+                btn.textContent = 'Recognizing...';
+                
+                // Recognize
+                const result = await worker.recognize(currentImage);
+                
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+                log(`OCR complete in ${elapsed}s`, 'success');
+                
+                showResults(result.data.text, elapsed);
+                
+                // Cleanup
+                await worker.terminate();
+                
+            } catch (e) {
+                log(`Error: ${e.message}`, 'error');
+                console.error(e);
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Run Tesseract';
+        }
+        
+        // ============ TESSERACT MINIMAL ============
+        async function runTesseractMinimal() {
+            if (!currentImage) return;
+            
+            const btn = document.getElementById('btn-tesseract-min');
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+            
+            const startTime = performance.now();
+            
+            try {
+                if (typeof Tesseract === 'undefined') {
+                    log('Downloading Tesseract.js...');
+                    await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+                }
+                
+                log('Creating minimal worker...');
+                
+                // Use corePath to potentially speed up
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    logger: m => {
+                        if (m.progress !== undefined) {
+                            const pct = Math.round(m.progress * 100);
+                            btn.textContent = `${m.status || 'Working'} ${pct}%`;
+                            log(`${m.status}: ${pct}%`, 'progress');
+                        }
+                    }
+                });
+                
+                // Set minimal parameters for speed
+                await worker.setParameters({
+                    tessedit_pageseg_mode: '6', // Assume uniform block of text
+                    tessedit_char_whitelist: '0123456789%ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ',
+                });
+                
+                log('Running recognition (minimal mode)...');
+                const result = await worker.recognize(currentImage);
+                
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+                log(`Minimal OCR complete in ${elapsed}s`, 'success');
+                
+                showResults(result.data.text, elapsed);
+                await worker.terminate();
+                
+            } catch (e) {
+                log(`Error: ${e.message}`, 'error');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Run Minimal';
+        }
+        
+        // ============ MANUAL ENTRY ============
+        function showManualEntry() {
+            document.getElementById('manual-modal').style.display = 'block';
+            log('Showing manual entry form');
+        }
+        
+        function closeManualModal() {
+            document.getElementById('manual-modal').style.display = 'none';
+        }
+        
+        function saveManualEntry() {
+            const streak = document.getElementById('manual-streak').value;
+            const played = document.getElementById('manual-played').value;
+            const win = document.getElementById('manual-win').value;
+            
+            log(`Manual entry: Streak=${streak}, Played=${played}, Win=${win}%`, 'success');
+            
+            const stats = {};
+            if (streak) stats.currentStreak = streak;
+            if (played) stats.played = played;
+            if (win) stats.winPercent = win;
+            
+            showExtractedStats(stats);
+            closeManualModal();
+        }
+        
+        // ============ RESULTS ============
+        function showResults(text, elapsed) {
+            document.getElementById('results-card').style.display = 'block';
+            document.getElementById('ocr-text').textContent = text || '(No text detected)';
+            
+            // Try to extract stats
+            const stats = extractStats(text);
+            showExtractedStats(stats);
+        }
+        
+        function extractStats(text) {
+            const stats = {};
+            
+            // Played
+            let match = text.match(/(\d+)\s*(?:Played|played)/i) || text.match(/(?:Played|played)\s*(\d+)/i);
+            if (match) stats.played = match[1];
+            
+            // Win %
+            match = text.match(/(\d+)\s*%?\s*(?:Win|Won)/i) || text.match(/(?:Win|Won)\s*(\d+)/i);
+            if (match) stats.winPercent = match[1];
+            
+            // Current Streak
+            match = text.match(/(\d+)\s*(?:Current\s*Streak)/i) || text.match(/(?:Current\s*Streak)\s*(\d+)/i);
+            if (match) stats.currentStreak = match[1];
+            
+            // Max Streak
+            match = text.match(/(\d+)\s*(?:Max\s*Streak)/i) || text.match(/(?:Max\s*Streak)\s*(\d+)/i);
+            if (match) stats.maxStreak = match[1];
+            
+            return stats;
+        }
+        
+        function showExtractedStats(stats) {
+            const container = document.getElementById('extracted-stats');
+            
+            if (Object.keys(stats).length === 0) {
+                container.innerHTML = '<div style="color: var(--muted); font-size: 0.85rem;">No stats extracted</div>';
+                return;
+            }
+            
+            const labels = {
+                played: 'Played',
+                winPercent: 'Win %',
+                currentStreak: 'Streak',
+                maxStreak: 'Max Streak'
+            };
+            
+            container.innerHTML = Object.entries(stats).map(([k, v]) => `
+                <div class="stat">
+                    <div class="stat-value">${v}</div>
+                    <div class="stat-label">${labels[k] || k}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('results-card').style.display = 'block';
+        }
+        
+        // ============ UTILITIES ============
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = () => {
+                    log('Script loaded: ' + src.split('/').pop(), 'success');
+                    resolve();
+                };
+                s.onerror = () => {
+                    log('Failed to load: ' + src, 'error');
+                    reject(new Error('Script load failed'));
+                };
+                document.head.appendChild(s);
+            });
+        }
+        
+        // ============ INIT ============
+        showDeviceInfo();
+        log('Ready - upload a screenshot to test OCR methods');
+    </script>
+</body>
+</html>
