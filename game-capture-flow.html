@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Game Shelf - Setup</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a2e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666;
+            --accent-purple: #667eea;
+            --accent-green: #48bb78;
+            --accent-yellow: #c9b458;
+            --accent-red: #e53e3e;
+            --border: #2a2a3e;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+            overflow-x: hidden;
+        }
+        
+        /* Header */
+        .header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header-icon {
+            font-size: 1.8rem;
+        }
+        
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .header .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        /* Steps indicator */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+        }
+        
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s;
+        }
+        
+        .step-dot.active {
+            background: var(--accent-purple);
+            width: 24px;
+            border-radius: 4px;
+        }
+        
+        .step-dot.complete {
+            background: var(--accent-green);
+        }
+        
+        /* Screens */
+        .screen {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Screen 1: Game Selection */
+        .screen-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .screen-desc {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .game-option {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .game-option:active {
+            transform: scale(0.95);
+        }
+        
+        .game-option.selected {
+            border-color: var(--accent-purple);
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .game-option .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        
+        .game-option .name {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .game-option.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        
+        .game-option .coming-soon {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+        
+        /* Screen 2: Instructions */
+        .instruction-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .instruction-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .instruction-header .game-icon {
+            font-size: 2.5rem;
+        }
+        
+        .instruction-header .game-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .instruction-steps {
+            list-style: none;
+        }
+        
+        .instruction-steps li {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            width: 28px;
+            height: 28px;
+            background: var(--accent-purple);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        
+        .step-text {
+            padding-top: 3px;
+            line-height: 1.4;
+        }
+        
+        .step-text strong {
+            color: var(--accent-purple);
+        }
+        
+        .tip-box {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+        }
+        
+        .tip-box .tip-title {
+            font-weight: 600;
+            color: var(--accent-purple);
+            margin-bottom: 4px;
+        }
+        
+        /* Screen 3: Waiting / Upload */
+        .waiting-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        
+        .waiting-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .waiting-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .waiting-desc {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        
+        .upload-zone {
+            background: var(--bg-tertiary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--accent-purple);
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .upload-zone .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        
+        .upload-zone p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        /* Screen 4: Analyzing */
+        .analyzing-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .analyzing-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .analyzing-status {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), #764ba2);
+            transition: width 0.3s;
+        }
+        
+        .preview-thumbnail {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 16px auto;
+            border: 1px solid var(--border);
+        }
+        
+        /* Screen 5: Results & Questions */
+        .results-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .results-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .results-header .check {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .results-header .title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .stats-found {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .question-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .question-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .option-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .option-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            width: 100%;
+        }
+        
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .option-btn.selected {
+            border-color: var(--accent-purple);
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .option-btn .opt-icon {
+            font-size: 1.5rem;
+        }
+        
+        .option-btn .opt-label {
+            font-weight: 600;
+        }
+        
+        .option-btn .opt-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        /* Screen 6: Complete */
+        .complete-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        
+        .complete-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+        
+        .complete-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .complete-desc {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        
+        .config-summary {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .config-row:last-child {
+            border-bottom: none;
+        }
+        
+        .config-label {
+            color: var(--text-muted);
+        }
+        
+        .config-value {
+            font-weight: 600;
+        }
+        
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-success {
+            background: var(--accent-green);
+            color: white;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        /* Bottom fixed buttons */
+        .bottom-actions {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            padding-bottom: calc(16px + var(--safe-bottom));
+            background: linear-gradient(to top, var(--bg-primary) 80%, transparent);
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: calc(20px + var(--safe-top));
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--bg-secondary);
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            z-index: 1000;
+            transition: transform 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .toast.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .toast.error {
+            border-color: var(--accent-red);
+        }
+        
+        .toast.success {
+            border-color: var(--accent-green);
+        }
+        
+        /* Debug panel - can remove for production */
+        .debug-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            max-width: 150px;
+            display: none;
+        }
+        
+        .debug-panel.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-icon">🎮</div>
+        <div>
+            <h1>Game Shelf Setup</h1>
+            <div class="subtitle">Configure your games</div>
+        </div>
+    </div>
+    
+    <!-- Steps indicator -->
+    <div class="steps">
+        <div class="step-dot active" data-step="1"></div>
+        <div class="step-dot" data-step="2"></div>
+        <div class="step-dot" data-step="3"></div>
+        <div class="step-dot" data-step="4"></div>
+    </div>
+    
+    <!-- Screen 1: Select Game -->
+    <div class="screen active" id="screen-select">
+        <h2 class="screen-title">📸 Capture Game Info</h2>
+        <p class="screen-desc">Select a game to set up. We'll help you configure it automatically from a screenshot.</p>
+        
+        <div class="game-grid" id="game-grid">
+            <!-- Populated by JS -->
+        </div>
+        
+        <div class="bottom-actions">
+            <button class="btn btn-primary" id="btn-select-continue" disabled>
+                Continue
+            </button>
+        </div>
+    </div>
+    
+    <!-- Screen 2: Instructions -->
+    <div class="screen" id="screen-instructions">
+        <div class="instruction-card">
+            <div class="instruction-header">
+                <div class="game-icon" id="instruction-game-icon">🟩</div>
+                <div class="game-name" id="instruction-game-name">Wordle</div>
+            </div>
+            
+            <ol class="instruction-steps">
+                <li>
+                    <div class="step-number">1</div>
+                    <div class="step-text">
+                        <strong>Open <span id="instruction-game-name2">Wordle</span></strong> the way you normally do (app or browser)
+                    </div>
+                </li>
+                <li>
+                    <div class="step-number">2</div>
+                    <div class="step-text">
+                        Go to your <strong>stats screen</strong> (tap the chart/stats icon)
+                    </div>
+                </li>
+                <li>
+                    <div class="step-number">3</div>
+                    <div class="step-text">
+                        <strong>Take a screenshot</strong> of your stats
+                    </div>
+                </li>
+                <li>
+                    <div class="step-number">4</div>
+                    <div class="step-text">
+                        <strong>Come back here</strong> and upload it
+                    </div>
+                </li>
+            </ol>
+            
+            <div class="tip-box">
+                <div class="tip-title">💡 Tip</div>
+                On iPhone: Press Side + Volume Up<br>
+                On Android: Press Power + Volume Down
+            </div>
+        </div>
+        
+        <div class="bottom-actions">
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="goToScreen('select')">Back</button>
+                <button class="btn btn-primary" onclick="goToScreen('waiting')">I'm Ready</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Screen 3: Waiting for screenshot -->
+    <div class="screen" id="screen-waiting">
+        <div class="waiting-card">
+            <div class="waiting-icon">📱</div>
+            <div class="waiting-title">Take your screenshot</div>
+            <div class="waiting-desc">
+                Open <span id="waiting-game-name">Wordle</span>, go to Stats, take a screenshot, then upload it here.
+            </div>
+            
+            <div class="upload-zone" id="upload-zone">
+                <div class="upload-icon">📷</div>
+                <p>Tap to upload screenshot</p>
+            </div>
+            <input type="file" id="file-input" accept="image/*">
+        </div>
+        
+        <div class="bottom-actions">
+            <button class="btn btn-secondary" onclick="goToScreen('instructions')">Back to Instructions</button>
+        </div>
+    </div>
+    
+    <!-- Screen 4: Analyzing -->
+    <div class="screen" id="screen-analyzing">
+        <div class="analyzing-card">
+            <img class="preview-thumbnail" id="preview-thumbnail" src="" alt="Screenshot">
+            <div class="spinner"></div>
+            <div class="analyzing-title">Analyzing Screenshot</div>
+            <div class="analyzing-status" id="analyzing-status">Loading OCR engine...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Screen 5: Results & Questions -->
+    <div class="screen" id="screen-results">
+        <div class="results-card">
+            <div class="results-header">
+                <div class="check">✓</div>
+                <div class="title" id="results-title">Wordle Detected!</div>
+            </div>
+            
+            <div class="stats-found" id="stats-found">
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="question-card" id="question-platform">
+            <div class="question-title">Where do you play <span id="question-game-name">Wordle</span>?</div>
+            <div class="option-buttons" id="platform-options">
+                <!-- Populated by JS based on device -->
+            </div>
+        </div>
+        
+        <div class="bottom-actions">
+            <button class="btn btn-primary" id="btn-confirm" disabled>
+                Confirm Setup
+            </button>
+        </div>
+    </div>
+    
+    <!-- Screen 6: Complete -->
+    <div class="screen" id="screen-complete">
+        <div class="complete-card">
+            <div class="complete-icon">🎉</div>
+            <div class="complete-title">All Set!</div>
+            <div class="complete-desc">
+                <span id="complete-game-name">Wordle</span> is now configured. Game Shelf will launch it correctly every time.
+            </div>
+            
+            <div class="config-summary" id="config-summary">
+                <!-- Populated by JS -->
+            </div>
+            
+            <button class="btn btn-success" onclick="addAnotherGame()">
+                ➕ Add Another Game
+            </button>
+            <button class="btn btn-secondary" style="margin-top: 10px;" onclick="finishSetup()">
+                Done for Now
+            </button>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    
+    <!-- Debug panel -->
+    <div class="debug-panel" id="debug-panel"></div>
+    
+    <!-- Tesseract.js -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    
+    <script>
+        // ============ GAME DATA ============
+        const GAMES = {
+            wordle: {
+                id: 'wordle',
+                name: 'Wordle',
+                icon: '🟩',
+                publisher: 'NYT',
+                webUrl: 'https://www.nytimes.com/games/wordle',
+                hasApp: true,
+                patterns: {
+                    identifiers: ['wordle', 'played', 'win', 'current streak', 'max streak', 'guess distribution'],
+                    stats: {
+                        played: /(?:(\d[\d,]*)\s*(?:puzzles?\s*)?played|played\s*(\d[\d,]*))/i,
+                        winPercent: /(?:(\d+)\s*%?\s*(?:win|won)|(?:win|won)\s*(?:rate)?\s*(\d+)\s*%?)/i,
+                        currentStreak: /(?:(\d+)\s*current\s*streak|current\s*streak\s*(\d+))/i,
+                        maxStreak: /(?:(\d+)\s*max\s*streak|max\s*streak\s*(\d+))/i
+                    }
+                }
+            },
+            connections: {
+                id: 'connections',
+                name: 'Connections',
+                icon: '🔗',
+                publisher: 'NYT',
+                webUrl: 'https://www.nytimes.com/games/connections',
+                hasApp: true,
+                patterns: {
+                    identifiers: ['connections', 'puzzles solved', 'current streak', 'max streak'],
+                    stats: {
+                        solved: /(?:(\d[\d,]*)\s*(?:puzzles?\s*)?solved|solved\s*(\d[\d,]*))/i,
+                        currentStreak: /(?:(\d+)\s*current\s*streak|current\s*streak\s*(\d+))/i,
+                        maxStreak: /(?:(\d+)\s*max\s*streak|max\s*streak\s*(\d+))/i
+                    }
+                }
+            },
+            strands: {
+                id: 'strands',
+                name: 'Strands',
+                icon: '🧵',
+                publisher: 'NYT',
+                webUrl: 'https://www.nytimes.com/games/strands',
+                hasApp: true,
+                patterns: {
+                    identifiers: ['strands', 'puzzles solved', 'hints used', 'perfect'],
+                    stats: {
+                        solved: /(?:(\d[\d,]*)\s*(?:puzzles?\s*)?solved|solved\s*(\d[\d,]*))/i,
+                        hintsUsed: /(?:(\d+)\s*hints?\s*used|hints?\s*used\s*(\d+))/i
+                    }
+                }
+            },
+            'spelling-bee': {
+                id: 'spelling-bee',
+                name: 'Spelling Bee',
+                icon: '🐝',
+                publisher: 'NYT',
+                webUrl: 'https://www.nytimes.com/puzzles/spelling-bee',
+                hasApp: true,
+                patterns: {
+                    identifiers: ['spelling bee', 'genius', 'queen bee', 'pangram'],
+                    stats: {
+                        puzzlesPlayed: /(?:(\d[\d,]*)\s*puzzles?\s*played|puzzles?\s*played\s*(\d[\d,]*))/i,
+                        geniuses: /(?:(\d+)\s*genius|genius\s*(\d+))/i
+                    }
+                }
+            },
+            mini: {
+                id: 'mini',
+                name: 'Mini Crossword',
+                icon: '✏️',
+                publisher: 'NYT',
+                webUrl: 'https://www.nytimes.com/crosswords/game/mini',
+                hasApp: true,
+                patterns: {
+                    identifiers: ['mini', 'crossword', 'solved', 'average time', 'best time'],
+                    stats: {
+                        solved: /(?:(\d[\d,]*)\s*solved|solved\s*(\d[\d,]*))/i,
+                        avgTime: /average.*?(\d+):(\d+)/i,
+                        bestTime: /best.*?(\d+):(\d+)/i
+                    }
+                }
+            },
+            queens: {
+                id: 'queens',
+                name: 'Queens',
+                icon: '👑',
+                publisher: 'LinkedIn',
+                webUrl: 'https://www.linkedin.com/games/queens',
+                hasApp: false,
+                comingSoon: true
+            },
+            tango: {
+                id: 'tango',
+                name: 'Tango',
+                icon: '🌗',
+                publisher: 'LinkedIn',
+                webUrl: 'https://www.linkedin.com/games/tango',
+                hasApp: false,
+                comingSoon: true
+            }
+        };
+        
+        // ============ STATE ============
+        let selectedGame = null;
+        let selectedPlatform = null;
+        let extractedStats = {};
+        let tesseractWorker = null;
+        let currentImage = null;
+        
+        // ============ PLATFORM DETECTION ============
+        function detectPlatform() {
+            const ua = navigator.userAgent.toLowerCase();
+            if (/iphone|ipad|ipod/.test(ua)) return 'ios';
+            if (/android/.test(ua)) return 'android';
+            return 'desktop';
+        }
+        
+        const currentPlatform = detectPlatform();
+        
+        // ============ INITIALIZATION ============
+        function init() {
+            renderGameGrid();
+            setupEventListeners();
+            initTesseract();
+        }
+        
+        function renderGameGrid() {
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = Object.values(GAMES).map(game => `
+                <div class="game-option ${game.comingSoon ? 'disabled' : ''}" 
+                     data-game="${game.id}"
+                     onclick="selectGame('${game.id}')">
+                    <div class="icon">${game.icon}</div>
+                    <div class="name">${game.name}</div>
+                    ${game.comingSoon ? '<div class="coming-soon">Coming Soon</div>' : ''}
+                </div>
+            `).join('');
+        }
+        
+        function setupEventListeners() {
+            // File upload
+            const uploadZone = document.getElementById('upload-zone');
+            const fileInput = document.getElementById('file-input');
+            
+            uploadZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // Drag and drop
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+            
+            // Continue button
+            document.getElementById('btn-select-continue').addEventListener('click', () => {
+                if (selectedGame) goToScreen('instructions');
+            });
+            
+            // Confirm button
+            document.getElementById('btn-confirm').addEventListener('click', confirmSetup);
+        }
+        
+        async function initTesseract() {
+            try {
+                tesseractWorker = await Tesseract.createWorker('eng');
+                debug('Tesseract ready');
+            } catch (e) {
+                console.error('Failed to init Tesseract:', e);
+            }
+        }
+        
+        // ============ GAME SELECTION ============
+        function selectGame(gameId) {
+            const game = GAMES[gameId];
+            if (!game || game.comingSoon) return;
+            
+            selectedGame = game;
+            
+            // Update UI
+            document.querySelectorAll('.game-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.game === gameId);
+            });
+            
+            document.getElementById('btn-select-continue').disabled = false;
+            
+            // Update instruction screen
+            document.getElementById('instruction-game-icon').textContent = game.icon;
+            document.getElementById('instruction-game-name').textContent = game.name;
+            document.getElementById('instruction-game-name2').textContent = game.name;
+            document.getElementById('waiting-game-name').textContent = game.name;
+        }
+        
+        // ============ SCREEN NAVIGATION ============
+        function goToScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${screenName}`).classList.add('active');
+            
+            // Update steps
+            const stepMap = { select: 1, instructions: 1, waiting: 2, analyzing: 3, results: 4, complete: 4 };
+            const currentStep = stepMap[screenName] || 1;
+            
+            document.querySelectorAll('.step-dot').forEach(dot => {
+                const step = parseInt(dot.dataset.step);
+                dot.classList.remove('active', 'complete');
+                if (step < currentStep) dot.classList.add('complete');
+                if (step === currentStep) dot.classList.add('active');
+            });
+        }
+        
+        // ============ FILE HANDLING ============
+        function handleFileSelect(e) {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        }
+        
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Please upload an image', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                document.getElementById('preview-thumbnail').src = currentImage;
+                goToScreen('analyzing');
+                analyzeScreenshot();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // ============ OCR ANALYSIS ============
+        async function analyzeScreenshot() {
+            const statusEl = document.getElementById('analyzing-status');
+            const progressEl = document.getElementById('progress-fill');
+            
+            statusEl.textContent = 'Running text recognition...';
+            progressEl.style.width = '10%';
+            
+            try {
+                // Run OCR
+                const result = await tesseractWorker.recognize(currentImage, {}, {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            progressEl.style.width = `${10 + (m.progress * 70)}%`;
+                        }
+                    }
+                });
+                
+                statusEl.textContent = 'Extracting stats...';
+                progressEl.style.width = '85%';
+                
+                const text = result.data.text;
+                const confidence = result.data.confidence;
+                
+                debug(`OCR confidence: ${confidence}%`);
+                debug(`Text: ${text.substring(0, 100)}...`);
+                
+                // Verify it matches selected game
+                const game = selectedGame;
+                let matchScore = 0;
+                
+                for (const pattern of game.patterns.identifiers) {
+                    if (text.toLowerCase().includes(pattern.toLowerCase())) {
+                        matchScore++;
+                    }
+                }
+                
+                if (matchScore < 2) {
+                    // Doesn't look like the right game
+                    showToast(`This doesn't look like ${game.name} stats. Try another screenshot.`, 'error');
+                    goToScreen('waiting');
+                    return;
+                }
+                
+                // Extract stats
+                extractedStats = {};
+                for (const [key, pattern] of Object.entries(game.patterns.stats || {})) {
+                    const match = text.match(pattern);
+                    if (match) {
+                        // Handle capture groups (some patterns have two groups for different formats)
+                        extractedStats[key] = match[1] || match[2];
+                    }
+                }
+                
+                statusEl.textContent = 'Done!';
+                progressEl.style.width = '100%';
+                
+                setTimeout(() => showResults(), 500);
+                
+            } catch (e) {
+                console.error('OCR error:', e);
+                showToast('Failed to analyze screenshot', 'error');
+                goToScreen('waiting');
+            }
+        }
+        
+        // ============ RESULTS & QUESTIONS ============
+        function showResults() {
+            const game = selectedGame;
+            
+            // Update title
+            document.getElementById('results-title').textContent = `${game.icon} ${game.name} Detected!`;
+            document.getElementById('question-game-name').textContent = game.name;
+            
+            // Show stats
+            const statsGrid = document.getElementById('stats-grid');
+            const statLabels = {
+                played: 'Played',
+                winPercent: 'Win %',
+                currentStreak: 'Current Streak',
+                maxStreak: 'Max Streak',
+                solved: 'Solved',
+                hintsUsed: 'Hints Used',
+                puzzlesPlayed: 'Puzzles',
+                geniuses: 'Geniuses',
+                avgTime: 'Avg Time',
+                bestTime: 'Best Time'
+            };
+            
+            if (Object.keys(extractedStats).length > 0) {
+                statsGrid.innerHTML = Object.entries(extractedStats).map(([key, value]) => `
+                    <div class="stat-item">
+                        <div class="stat-value">${value}</div>
+                        <div class="stat-label">${statLabels[key] || key}</div>
+                    </div>
+                `).join('');
+                document.getElementById('stats-found').style.display = 'block';
+            } else {
+                document.getElementById('stats-found').style.display = 'none';
+            }
+            
+            // Show platform question
+            renderPlatformOptions();
+            
+            goToScreen('results');
+        }
+        
+        function renderPlatformOptions() {
+            const game = selectedGame;
+            const container = document.getElementById('platform-options');
+            
+            let options = [];
+            
+            if (game.hasApp) {
+                if (currentPlatform === 'ios') {
+                    options = [
+                        { id: 'nyt-ios', icon: '📱', label: 'NYT Games App', desc: 'The app with the red icon' },
+                        { id: 'browser-ios', icon: '🌐', label: 'Safari Browser', desc: 'nytimes.com in Safari' }
+                    ];
+                } else if (currentPlatform === 'android') {
+                    options = [
+                        { id: 'nyt-android', icon: '📱', label: 'NYT Games App', desc: 'The app from Play Store' },
+                        { id: 'browser-android', icon: '🌐', label: 'Chrome Browser', desc: 'nytimes.com in Chrome' }
+                    ];
+                } else {
+                    options = [
+                        { id: 'browser-desktop', icon: '🌐', label: 'Web Browser', desc: 'Chrome, Safari, Firefox, etc.' },
+                        { id: 'browser-extension', icon: '🔌', label: 'Browser + Extension', desc: 'Auto-capture with extension' }
+                    ];
+                }
+            } else {
+                // Browser-only games
+                options = [
+                    { id: 'browser-' + currentPlatform, icon: '🌐', label: 'Web Browser', desc: 'The only way to play' }
+                ];
+            }
+            
+            container.innerHTML = options.map(opt => `
+                <button class="option-btn" data-platform="${opt.id}" onclick="selectPlatform('${opt.id}')">
+                    <div class="opt-icon">${opt.icon}</div>
+                    <div>
+                        <div class="opt-label">${opt.label}</div>
+                        <div class="opt-desc">${opt.desc}</div>
+                    </div>
+                </button>
+            `).join('');
+        }
+        
+        function selectPlatform(platformId) {
+            selectedPlatform = platformId;
+            
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.platform === platformId);
+            });
+            
+            document.getElementById('btn-confirm').disabled = false;
+        }
+        
+        // ============ COMPLETE SETUP ============
+        function confirmSetup() {
+            const game = selectedGame;
+            
+            // Save configuration
+            const config = {
+                gameId: game.id,
+                gameName: game.name,
+                platform: selectedPlatform,
+                stats: extractedStats,
+                launchInApp: ['nyt-ios', 'nyt-android'].includes(selectedPlatform),
+                configuredAt: new Date().toISOString()
+            };
+            
+            // Save to localStorage (in real app, would sync to cloud)
+            const savedGames = JSON.parse(localStorage.getItem('gameshelf_configured') || '{}');
+            savedGames[game.id] = config;
+            localStorage.setItem('gameshelf_configured', JSON.stringify(savedGames));
+            
+            // Update complete screen
+            document.getElementById('complete-game-name').textContent = game.name;
+            
+            const platformLabels = {
+                'nyt-ios': 'NYT App (iOS)',
+                'nyt-android': 'NYT App (Android)',
+                'browser-ios': 'Safari Browser',
+                'browser-android': 'Chrome Browser',
+                'browser-desktop': 'Web Browser',
+                'browser-extension': 'Browser + Extension'
+            };
+            
+            document.getElementById('config-summary').innerHTML = `
+                <div class="config-row">
+                    <span class="config-label">Game</span>
+                    <span class="config-value">${game.icon} ${game.name}</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Launch Method</span>
+                    <span class="config-value">${platformLabels[selectedPlatform]}</span>
+                </div>
+                ${extractedStats.currentStreak ? `
+                <div class="config-row">
+                    <span class="config-label">Current Streak</span>
+                    <span class="config-value">${extractedStats.currentStreak} days</span>
+                </div>
+                ` : ''}
+            `;
+            
+            showToast(`${game.name} configured!`, 'success');
+            goToScreen('complete');
+        }
+        
+        function addAnotherGame() {
+            // Reset state
+            selectedGame = null;
+            selectedPlatform = null;
+            extractedStats = {};
+            currentImage = null;
+            
+            document.querySelectorAll('.game-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById('btn-select-continue').disabled = true;
+            document.getElementById('btn-confirm').disabled = true;
+            document.getElementById('file-input').value = '';
+            
+            goToScreen('select');
+        }
+        
+        function finishSetup() {
+            // Show what was configured
+            const saved = JSON.parse(localStorage.getItem('gameshelf_configured') || '{}');
+            const count = Object.keys(saved).length;
+            
+            showToast(`Setup complete! ${count} game${count !== 1 ? 's' : ''} configured.`, 'success');
+            
+            // In real app, would navigate to main Game Shelf view
+        }
+        
+        // ============ UTILITIES ============
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast visible ' + type;
+            
+            setTimeout(() => {
+                toast.classList.remove('visible');
+            }, 3000);
+        }
+        
+        function debug(msg) {
+            console.log('[DEBUG]', msg);
+            const panel = document.getElementById('debug-panel');
+            panel.innerHTML = msg;
+            // panel.classList.add('show'); // Uncomment to show debug panel
+        }
+        
+        // ============ START ============
+        init();
+    </script>
+</body>
+</html>
