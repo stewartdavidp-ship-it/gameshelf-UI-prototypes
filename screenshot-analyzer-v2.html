@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Screenshot Analyzer - Research Tool</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a2e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666;
+            --accent-purple: #667eea;
+            --accent-green: #48bb78;
+            --accent-yellow: #c9b458;
+            --accent-red: #e53e3e;
+            --accent-blue: #4299e1;
+            --border: #2a2a3e;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+        
+        h1 {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+        
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+        
+        .upload-zone {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--accent-purple);
+            background: var(--bg-tertiary);
+        }
+        
+        .upload-zone .icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .upload-zone p { color: var(--text-secondary); }
+        .upload-zone .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        
+        input[type="file"] { display: none; }
+        
+        .preview-section {
+            display: none;
+            margin-bottom: 20px;
+        }
+        
+        .preview-section.active { display: block; }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .preview-header h3 { font-size: 1rem; }
+        
+        .btn-small {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .preview-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+        
+        .analysis-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .analysis-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .analysis-header .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), #764ba2);
+            transition: width 0.3s;
+        }
+        
+        /* Detection Results */
+        .detection-card {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--border);
+        }
+        
+        .detection-card.high-confidence { border-left-color: var(--accent-green); }
+        .detection-card.medium-confidence { border-left-color: var(--accent-yellow); }
+        .detection-card.low-confidence { border-left-color: var(--accent-red); }
+        
+        .detection-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .detection-title .label {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .confidence-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .confidence-badge.high { background: rgba(72, 187, 120, 0.2); color: var(--accent-green); }
+        .confidence-badge.medium { background: rgba(201, 180, 88, 0.2); color: var(--accent-yellow); }
+        .confidence-badge.low { background: rgba(229, 62, 62, 0.2); color: var(--accent-red); }
+        
+        .detection-value {
+            font-size: 1.1rem;
+            color: var(--accent-purple);
+        }
+        
+        .detection-evidence {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        /* Extracted Data */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .data-item {
+            background: var(--bg-secondary);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .data-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+        }
+        
+        .data-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        
+        /* Raw OCR */
+        .raw-section {
+            margin-top: 16px;
+        }
+        
+        .raw-toggle {
+            background: none;
+            border: none;
+            color: var(--accent-purple);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .raw-text {
+            display: none;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            color: var(--text-secondary);
+        }
+        
+        .raw-text.visible { display: block; }
+        
+        /* Screen Type Indicators */
+        .screen-types {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        
+        .screen-type-tag {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+        }
+        
+        .screen-type-tag.detected {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+        }
+        
+        /* Platform Hints */
+        .platform-hints {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .hint-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            padding: 4px 0;
+        }
+        
+        .hint-label { color: var(--text-muted); }
+        .hint-value { font-weight: 500; }
+        
+        /* Knowledge Base */
+        .knowledge-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        
+        .knowledge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .knowledge-header h3 { font-size: 1rem; }
+        
+        .knowledge-grid {
+            display: grid;
+            gap: 8px;
+        }
+        
+        .knowledge-item {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .knowledge-item .game-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .knowledge-item .game-icon { font-size: 1.3rem; }
+        .knowledge-item .game-name { font-weight: 600; }
+        .knowledge-item .game-details { font-size: 0.8rem; color: var(--text-muted); }
+        
+        .knowledge-item .status {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        
+        .knowledge-item .status.complete {
+            background: rgba(72, 187, 120, 0.2);
+            color: var(--accent-green);
+        }
+        
+        .knowledge-item .status.partial {
+            background: rgba(201, 180, 88, 0.2);
+            color: var(--accent-yellow);
+        }
+        
+        /* Color Analysis */
+        .color-analysis {
+            margin-top: 12px;
+        }
+        
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .color-swatches {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+        
+        .color-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        /* What We Need */
+        .needs-section {
+            background: rgba(229, 62, 62, 0.1);
+            border: 1px solid rgba(229, 62, 62, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+        
+        .needs-title {
+            font-weight: 600;
+            color: var(--accent-red);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+        
+        .needs-list {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .needs-list li {
+            margin-bottom: 4px;
+            margin-left: 16px;
+        }
+        
+        /* History */
+        .history-section {
+            margin-top: 20px;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .history-header h3 { font-size: 1rem; }
+        
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        
+        .history-thumb {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .history-thumb:hover {
+            transform: scale(1.05);
+        }
+        
+        .history-thumb.selected {
+            border-color: var(--accent-purple);
+            border-width: 2px;
+        }
+        
+        /* Summary */
+        .summary-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            border: 1px solid var(--accent-purple);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .summary-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .summary-stat .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+        }
+        
+        .summary-stat .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 Screenshot Analyzer</h1>
+    <p class="subtitle">Research tool - See what we can detect from any screenshot</p>
+    
+    <div class="upload-zone" id="upload-zone">
+        <div class="icon">📷</div>
+        <p>Upload any game screenshot</p>
+        <p class="hint">Stats, results, home screen - anything!</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*">
+    
+    <div class="preview-section" id="preview-section">
+        <div class="preview-header">
+            <h3>📸 Current Screenshot</h3>
+            <button class="btn-small" onclick="clearCurrent()">✕ Clear</button>
+        </div>
+        <img class="preview-image" id="preview-image" src="" alt="Screenshot">
+    </div>
+    
+    <div class="analysis-section" id="analysis-section" style="display: none;">
+        <div class="analysis-header">
+            <div class="spinner" id="analysis-spinner"></div>
+            <span id="analysis-status">Analyzing...</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+        
+        <div id="results-container"></div>
+    </div>
+    
+    <div class="history-section" id="history-section" style="display: none;">
+        <div class="history-header">
+            <h3>📚 Screenshot History</h3>
+            <button class="btn-small" onclick="clearHistory()">Clear All</button>
+        </div>
+        <div class="history-grid" id="history-grid"></div>
+    </div>
+    
+    <div class="knowledge-section" id="knowledge-section" style="display: none;">
+        <div class="knowledge-header">
+            <h3>🧠 What We Know</h3>
+        </div>
+        <div class="knowledge-grid" id="knowledge-grid"></div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script>
+        // ============ SCREEN TYPE DEFINITIONS ============
+        // What screens exist and what can we learn from each?
+        
+        const SCREEN_TYPES = {
+            // Wordle screens
+            'wordle-result': {
+                game: 'wordle',
+                name: 'Wordle Result',
+                identifiers: [/wordle\s*[\d,]+\s*[1-6x]\/6/i, /🟩|🟨|⬛|⬜/],
+                canExtract: ['gameNumber', 'score', 'guessPattern'],
+                description: 'The colored grid you share after playing'
+            },
+            'wordle-stats': {
+                game: 'wordle',
+                name: 'Wordle Statistics',
+                identifiers: [/statistics/i, /played.*\d+/i, /win\s*%/i, /current\s*streak/i, /guess\s*distribution/i],
+                canExtract: ['played', 'winPercent', 'currentStreak', 'maxStreak', 'guessDistribution'],
+                description: 'The stats popup showing your history'
+            },
+            'wordle-playing': {
+                game: 'wordle',
+                name: 'Wordle In-Progress',
+                identifiers: [/enter/i, /delete/i],
+                canExtract: ['currentGuess'],
+                description: 'Mid-game keyboard and grid visible'
+            },
+            
+            // Connections screens
+            'connections-result': {
+                game: 'connections',
+                name: 'Connections Result',
+                identifiers: [/connections/i, /puzzle\s*#?\d+/i, /🟨🟨🟨🟨|🟩🟩🟩🟩|🟦🟦🟦🟦|🟪🟪🟪🟪/],
+                canExtract: ['puzzleNumber', 'mistakeCount', 'solveOrder'],
+                description: 'The result grid showing your solve order'
+            },
+            'connections-stats': {
+                game: 'connections',
+                name: 'Connections Statistics',
+                identifiers: [/puzzles\s*solved/i, /current\s*streak/i, /max\s*streak/i],
+                canExtract: ['solved', 'currentStreak', 'maxStreak'],
+                description: 'Stats screen with solve count and streaks'
+            },
+            
+            // Strands screens
+            'strands-result': {
+                game: 'strands',
+                name: 'Strands Result',
+                identifiers: [/strands\s*#?\d+/i, /💡|🔵|🟡/],
+                canExtract: ['puzzleNumber', 'hintsUsed'],
+                description: 'Result showing hints used'
+            },
+            'strands-stats': {
+                game: 'strands',
+                name: 'Strands Statistics',
+                identifiers: [/puzzles\s*solved/i, /hints?\s*used/i, /perfect/i],
+                canExtract: ['solved', 'totalHints', 'perfectGames'],
+                description: 'Stats with solve count and hint usage'
+            },
+            
+            // Spelling Bee screens
+            'spelling-bee-playing': {
+                game: 'spelling-bee',
+                name: 'Spelling Bee Game',
+                identifiers: [/beginner|good\s*start|moving\s*up|good|solid|nice|great|amazing|genius|queen\s*bee/i],
+                canExtract: ['currentRank', 'currentScore'],
+                description: 'In-game with rank showing'
+            },
+            'spelling-bee-stats': {
+                game: 'spelling-bee',
+                name: 'Spelling Bee Statistics',
+                identifiers: [/puzzles?\s*played/i, /genius/i, /pangram/i],
+                canExtract: ['puzzlesPlayed', 'geniusCount', 'pangramCount'],
+                description: 'Stats screen'
+            },
+            
+            // Mini screens
+            'mini-result': {
+                game: 'mini',
+                name: 'Mini Crossword Result',
+                identifiers: [/\d+:\d{2}/i, /your\s*time|solved/i],
+                canExtract: ['solveTime'],
+                description: 'Completion screen with time'
+            },
+            'mini-stats': {
+                game: 'mini',
+                name: 'Mini Statistics',
+                identifiers: [/average\s*time/i, /best\s*time/i, /solved/i],
+                canExtract: ['avgTime', 'bestTime', 'solvedCount', 'currentStreak'],
+                description: 'Stats with times and streaks'
+            },
+            
+            // NYT App screens
+            'nyt-home': {
+                game: null, // Multi-game
+                name: 'NYT Games Home',
+                identifiers: [/play\s*today/i, /daily\s*games/i],
+                canExtract: ['availableGames', 'completedToday'],
+                platformHint: 'app',
+                description: 'App home screen showing all games'
+            },
+            'nyt-profile': {
+                game: null,
+                name: 'NYT Games Profile',
+                identifiers: [/me|profile/i, /games\s*by/i],
+                canExtract: ['multiGameStats'],
+                platformHint: 'app',
+                description: 'Profile/Me screen with all game stats'
+            },
+            
+            // Browser indicators
+            'browser-safari': {
+                game: null,
+                name: 'Safari Browser',
+                identifiers: [/aa|ᴬᴬ|reader/i], // Safari URL bar elements
+                platformHint: 'browser-ios',
+                description: 'Safari browser chrome visible'
+            },
+            'browser-chrome': {
+                game: null,
+                name: 'Chrome Browser',
+                identifiers: [/⋮|tabs/i],
+                platformHint: 'browser',
+                description: 'Chrome browser chrome visible'
+            }
+        };
+        
+        // ============ EXTRACTION PATTERNS ============
+        const EXTRACTION_PATTERNS = {
+            // Numbers
+            played: [
+                /(\d[\d,]*)\s*(?:puzzles?\s*)?played/i,
+                /played\s*(\d[\d,]*)/i
+            ],
+            winPercent: [
+                /(\d+)\s*%?\s*(?:win|won)/i,
+                /win\s*(?:rate)?\s*(\d+)\s*%?/i
+            ],
+            currentStreak: [
+                /(\d+)\s*current\s*streak/i,
+                /current\s*streak\s*(\d+)/i
+            ],
+            maxStreak: [
+                /(\d+)\s*max\s*streak/i,
+                /max\s*streak\s*(\d+)/i
+            ],
+            solved: [
+                /(\d[\d,]*)\s*(?:puzzles?\s*)?solved/i,
+                /solved\s*(\d[\d,]*)/i
+            ],
+            
+            // Game-specific
+            wordleGameNumber: /wordle\s*([\d,]+)/i,
+            wordleScore: /wordle\s*[\d,]+\s*([1-6x])\/6/i,
+            connectionsNumber: /puzzle\s*#?(\d+)/i,
+            strandsNumber: /strands\s*#?(\d+)/i,
+            
+            // Times
+            time: /(\d+):(\d{2})/,
+            avgTime: /average.*?(\d+):(\d{2})/i,
+            bestTime: /best.*?(\d+):(\d{2})/i,
+            
+            // Counts
+            hintsUsed: /(\d+)\s*hints?\s*used/i,
+            perfectGames: /(\d+)\s*perfect/i,
+            geniusCount: /(\d+)\s*genius/i,
+            pangramCount: /(\d+)\s*pangrams?/i
+        };
+        
+        // ============ GAME DEFINITIONS ============
+        const GAMES = {
+            wordle: { id: 'wordle', name: 'Wordle', icon: '🟩', publisher: 'NYT' },
+            connections: { id: 'connections', name: 'Connections', icon: '🔗', publisher: 'NYT' },
+            strands: { id: 'strands', name: 'Strands', icon: '🧵', publisher: 'NYT' },
+            'spelling-bee': { id: 'spelling-bee', name: 'Spelling Bee', icon: '🐝', publisher: 'NYT' },
+            mini: { id: 'mini', name: 'Mini', icon: '✏️', publisher: 'NYT' }
+        };
+        
+        // ============ STATE ============
+        let tesseractWorker = null;
+        let analysisHistory = []; // Store past analyses
+        let knowledgeBase = {}; // Accumulated knowledge per game
+        
+        // ============ INITIALIZATION ============
+        async function init() {
+            setupEventListeners();
+            loadKnowledgeBase();
+            await initTesseract();
+        }
+        
+        function setupEventListeners() {
+            const uploadZone = document.getElementById('upload-zone');
+            const fileInput = document.getElementById('file-input');
+            
+            uploadZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', e => {
+                if (e.target.files.length) handleFile(e.target.files[0]);
+            });
+            
+            uploadZone.addEventListener('dragover', e => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+            uploadZone.addEventListener('drop', e => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+            });
+        }
+        
+        async function initTesseract() {
+            try {
+                tesseractWorker = await Tesseract.createWorker('eng');
+                console.log('✅ Tesseract ready');
+            } catch (e) {
+                console.error('Failed to init Tesseract:', e);
+            }
+        }
+        
+        function loadKnowledgeBase() {
+            const saved = localStorage.getItem('screenshot_knowledge');
+            if (saved) {
+                knowledgeBase = JSON.parse(saved);
+                renderKnowledgeBase();
+            }
+        }
+        
+        function saveKnowledgeBase() {
+            localStorage.setItem('screenshot_knowledge', JSON.stringify(knowledgeBase));
+        }
+        
+        // ============ FILE HANDLING ============
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) return;
+            
+            const reader = new FileReader();
+            reader.onload = e => {
+                const imageData = e.target.result;
+                showPreview(imageData);
+                analyzeScreenshot(imageData);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function showPreview(imageData) {
+            document.getElementById('preview-image').src = imageData;
+            document.getElementById('preview-section').classList.add('active');
+        }
+        
+        function clearCurrent() {
+            document.getElementById('preview-section').classList.remove('active');
+            document.getElementById('analysis-section').style.display = 'none';
+            document.getElementById('file-input').value = '';
+        }
+        
+        // ============ ANALYSIS ============
+        async function analyzeScreenshot(imageData) {
+            const section = document.getElementById('analysis-section');
+            const status = document.getElementById('analysis-status');
+            const progress = document.getElementById('progress-fill');
+            const spinner = document.getElementById('analysis-spinner');
+            const results = document.getElementById('results-container');
+            
+            section.style.display = 'block';
+            spinner.style.display = 'block';
+            status.textContent = 'Running OCR...';
+            progress.style.width = '10%';
+            results.innerHTML = '';
+            
+            try {
+                // Run OCR
+                const ocrResult = await tesseractWorker.recognize(imageData, {}, {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            progress.style.width = `${10 + m.progress * 50}%`;
+                        }
+                    }
+                });
+                
+                status.textContent = 'Analyzing content...';
+                progress.style.width = '70%';
+                
+                const text = ocrResult.data.text;
+                const confidence = ocrResult.data.confidence;
+                
+                // Analyze colors
+                const colors = await analyzeColors(imageData);
+                
+                status.textContent = 'Identifying screen type...';
+                progress.style.width = '85%';
+                
+                // Detect screen type(s)
+                const screenDetection = detectScreenTypes(text);
+                
+                // Extract all possible data
+                const extractedData = extractAllData(text);
+                
+                // Determine platform hints
+                const platformHints = detectPlatformHints(text, colors);
+                
+                // Build analysis result
+                const analysis = {
+                    timestamp: new Date().toISOString(),
+                    imageData: imageData,
+                    ocrText: text,
+                    ocrConfidence: confidence,
+                    screenTypes: screenDetection,
+                    extractedData: extractedData,
+                    colors: colors,
+                    platformHints: platformHints
+                };
+                
+                // Add to history
+                analysisHistory.unshift(analysis);
+                if (analysisHistory.length > 10) analysisHistory.pop();
+                
+                // Update knowledge base
+                updateKnowledgeBase(analysis);
+                
+                status.textContent = 'Complete!';
+                progress.style.width = '100%';
+                spinner.style.display = 'none';
+                
+                // Render results
+                renderAnalysisResults(analysis);
+                renderHistory();
+                renderKnowledgeBase();
+                
+            } catch (e) {
+                console.error('Analysis error:', e);
+                status.textContent = 'Error: ' + e.message;
+                spinner.style.display = 'none';
+            }
+        }
+        
+        function detectScreenTypes(text) {
+            const detected = [];
+            const textLower = text.toLowerCase();
+            
+            for (const [typeId, screenType] of Object.entries(SCREEN_TYPES)) {
+                let matchCount = 0;
+                let totalPatterns = screenType.identifiers.length;
+                let matchedPatterns = [];
+                
+                for (const pattern of screenType.identifiers) {
+                    if (pattern instanceof RegExp) {
+                        if (pattern.test(text)) {
+                            matchCount++;
+                            matchedPatterns.push(pattern.toString());
+                        }
+                    } else if (textLower.includes(pattern.toLowerCase())) {
+                        matchCount++;
+                        matchedPatterns.push(pattern);
+                    }
+                }
+                
+                if (matchCount > 0) {
+                    const confidence = matchCount / totalPatterns;
+                    detected.push({
+                        typeId,
+                        ...screenType,
+                        matchCount,
+                        totalPatterns,
+                        confidence,
+                        matchedPatterns
+                    });
+                }
+            }
+            
+            // Sort by confidence
+            detected.sort((a, b) => b.confidence - a.confidence);
+            
+            return detected;
+        }
+        
+        function extractAllData(text) {
+            const data = {};
+            
+            for (const [key, patterns] of Object.entries(EXTRACTION_PATTERNS)) {
+                const patternList = Array.isArray(patterns) ? patterns : [patterns];
+                
+                for (const pattern of patternList) {
+                    const match = text.match(pattern);
+                    if (match) {
+                        // Handle time patterns specially
+                        if (key.includes('Time') && match[1] && match[2]) {
+                            data[key] = `${match[1]}:${match[2]}`;
+                        } else {
+                            data[key] = match[1] || match[0];
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            return data;
+        }
+        
+        async function analyzeColors(imageData) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Scale down for performance
+                    const scale = Math.min(1, 100 / Math.max(img.width, img.height));
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // Count colors
+                    const colorCounts = {};
+                    for (let i = 0; i < imgData.data.length; i += 4) {
+                        const r = Math.round(imgData.data[i] / 32) * 32;
+                        const g = Math.round(imgData.data[i+1] / 32) * 32;
+                        const b = Math.round(imgData.data[i+2] / 32) * 32;
+                        const key = `${r},${g},${b}`;
+                        colorCounts[key] = (colorCounts[key] || 0) + 1;
+                    }
+                    
+                    // Get top colors
+                    const sorted = Object.entries(colorCounts)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 8);
+                    
+                    // Detect specific game colors
+                    const gameColors = {
+                        wordleGreen: false,
+                        wordleYellow: false,
+                        wordleGray: false,
+                        connectionsYellow: false,
+                        connectionsGreen: false,
+                        connectionsBlue: false,
+                        connectionsPurple: false
+                    };
+                    
+                    for (const [color] of sorted) {
+                        const [r, g, b] = color.split(',').map(Number);
+                        
+                        // Wordle green (#6aaa64)
+                        if (g > 140 && g < 200 && r > 80 && r < 130 && b > 80 && b < 130) {
+                            gameColors.wordleGreen = true;
+                        }
+                        // Wordle yellow (#c9b458)
+                        if (r > 180 && g > 160 && g < 200 && b > 60 && b < 120) {
+                            gameColors.wordleYellow = true;
+                        }
+                        // Connections colors (approximate)
+                        if (r > 200 && g > 200 && b < 150) gameColors.connectionsYellow = true;
+                        if (g > 180 && r < 180 && b < 150) gameColors.connectionsGreen = true;
+                        if (b > 200 && r > 150 && g > 180) gameColors.connectionsBlue = true;
+                        if (r > 160 && b > 160 && g < 150) gameColors.connectionsPurple = true;
+                    }
+                    
+                    resolve({
+                        dominant: sorted.map(([c]) => {
+                            const [r, g, b] = c.split(',');
+                            return `rgb(${r},${g},${b})`;
+                        }),
+                        gameColors
+                    });
+                };
+                img.src = imageData;
+            });
+        }
+        
+        function detectPlatformHints(text, colors) {
+            const hints = {
+                platform: null,
+                confidence: 'low',
+                evidence: []
+            };
+            
+            // Check for browser indicators
+            if (/nytimes\.com|linkedin\.com/i.test(text)) {
+                hints.evidence.push('URL visible in screenshot');
+                hints.platform = 'browser';
+            }
+            
+            // Check for app-specific text
+            if (/settings|account|notifications/i.test(text) && !/http|www\./i.test(text)) {
+                hints.evidence.push('App-style menu text');
+                hints.platform = 'app';
+            }
+            
+            // Check for iOS-specific
+            if (/carrier|battery|wifi|cellular/i.test(text)) {
+                hints.evidence.push('Status bar text detected');
+            }
+            
+            if (hints.evidence.length > 1) {
+                hints.confidence = 'medium';
+            }
+            if (hints.evidence.length > 2) {
+                hints.confidence = 'high';
+            }
+            
+            return hints;
+        }
+        
+        // ============ KNOWLEDGE BASE ============
+        function updateKnowledgeBase(analysis) {
+            // Determine which game(s) this screenshot is for
+            const primaryScreen = analysis.screenTypes[0];
+            if (!primaryScreen || !primaryScreen.game) return;
+            
+            const gameId = primaryScreen.game;
+            
+            if (!knowledgeBase[gameId]) {
+                knowledgeBase[gameId] = {
+                    game: GAMES[gameId],
+                    stats: {},
+                    platform: null,
+                    screenshots: 0,
+                    lastUpdated: null
+                };
+            }
+            
+            const kb = knowledgeBase[gameId];
+            kb.screenshots++;
+            kb.lastUpdated = analysis.timestamp;
+            
+            // Merge extracted data
+            for (const [key, value] of Object.entries(analysis.extractedData)) {
+                if (value && !kb.stats[key]) {
+                    kb.stats[key] = value;
+                }
+            }
+            
+            // Update platform if detected
+            if (analysis.platformHints.platform && !kb.platform) {
+                kb.platform = analysis.platformHints.platform;
+            }
+            
+            saveKnowledgeBase();
+        }
+        
+        // ============ RENDERING ============
+        function renderAnalysisResults(analysis) {
+            const container = document.getElementById('results-container');
+            
+            let html = '';
+            
+            // Screen Type Detection
+            html += `<div class="detection-card ${analysis.screenTypes[0]?.confidence > 0.5 ? 'high-confidence' : 'medium-confidence'}">`;
+            html += `<div class="detection-title">`;
+            html += `<span class="label">📱 Screen Type</span>`;
+            html += `</div>`;
+            
+            if (analysis.screenTypes.length > 0) {
+                const primary = analysis.screenTypes[0];
+                const game = primary.game ? GAMES[primary.game] : null;
+                
+                html += `<div class="detection-value">${game ? game.icon + ' ' : ''}${primary.name}</div>`;
+                html += `<div class="detection-evidence">Matched ${primary.matchCount}/${primary.totalPatterns} patterns</div>`;
+                
+                if (analysis.screenTypes.length > 1) {
+                    html += `<div class="screen-types">`;
+                    html += `<span style="font-size: 0.75rem; color: var(--text-muted);">Also possible:</span>`;
+                    analysis.screenTypes.slice(1, 4).forEach(st => {
+                        html += `<span class="screen-type-tag">${st.name}</span>`;
+                    });
+                    html += `</div>`;
+                }
+            } else {
+                html += `<div class="detection-value" style="color: var(--text-muted);">Unknown screen type</div>`;
+            }
+            html += `</div>`;
+            
+            // Extracted Data
+            const dataKeys = Object.keys(analysis.extractedData);
+            if (dataKeys.length > 0) {
+                html += `<div class="detection-card high-confidence">`;
+                html += `<div class="detection-title"><span class="label">📊 Extracted Data</span></div>`;
+                html += `<div class="data-grid">`;
+                
+                const labels = {
+                    played: 'Played', winPercent: 'Win %', currentStreak: 'Streak',
+                    maxStreak: 'Max Streak', solved: 'Solved', hintsUsed: 'Hints',
+                    avgTime: 'Avg Time', bestTime: 'Best Time', wordleScore: 'Score',
+                    wordleGameNumber: 'Game #', connectionsNumber: 'Puzzle #'
+                };
+                
+                for (const [key, value] of Object.entries(analysis.extractedData)) {
+                    html += `<div class="data-item">`;
+                    html += `<div class="data-value">${value}</div>`;
+                    html += `<div class="data-label">${labels[key] || key}</div>`;
+                    html += `</div>`;
+                }
+                html += `</div></div>`;
+            }
+            
+            // Color Analysis
+            if (analysis.colors) {
+                html += `<div class="detection-card">`;
+                html += `<div class="detection-title"><span class="label">🎨 Color Analysis</span></div>`;
+                html += `<div class="color-row">`;
+                html += `<div class="color-swatches">`;
+                analysis.colors.dominant.forEach(c => {
+                    html += `<div class="color-swatch" style="background: ${c}"></div>`;
+                });
+                html += `</div></div>`;
+                
+                const gc = analysis.colors.gameColors;
+                const detected = [];
+                if (gc.wordleGreen) detected.push('Wordle Green');
+                if (gc.wordleYellow) detected.push('Wordle Yellow');
+                if (gc.connectionsYellow || gc.connectionsGreen || gc.connectionsBlue || gc.connectionsPurple) {
+                    detected.push('Connections Colors');
+                }
+                if (detected.length > 0) {
+                    html += `<div class="color-label">Detected: ${detected.join(', ')}</div>`;
+                }
+                html += `</div>`;
+            }
+            
+            // Platform Hints
+            if (analysis.platformHints.evidence.length > 0) {
+                html += `<div class="detection-card">`;
+                html += `<div class="detection-title"><span class="label">💻 Platform Hints</span></div>`;
+                html += `<div class="platform-hints">`;
+                analysis.platformHints.evidence.forEach(e => {
+                    html += `<div class="hint-row"><span class="hint-value">• ${e}</span></div>`;
+                });
+                if (analysis.platformHints.platform) {
+                    html += `<div class="hint-row">`;
+                    html += `<span class="hint-label">Likely:</span>`;
+                    html += `<span class="hint-value">${analysis.platformHints.platform === 'app' ? '📱 Native App' : '🌐 Browser'}</span>`;
+                    html += `</div>`;
+                }
+                html += `</div></div>`;
+            }
+            
+            // What we still need
+            const primaryScreen = analysis.screenTypes[0];
+            if (primaryScreen && primaryScreen.game) {
+                const kb = knowledgeBase[primaryScreen.game] || { stats: {} };
+                const needed = [];
+                
+                if (!kb.stats.currentStreak && !analysis.extractedData.currentStreak) needed.push('Current streak');
+                if (!kb.stats.played && !analysis.extractedData.played) needed.push('Games played');
+                if (!kb.platform && !analysis.platformHints.platform) needed.push('App vs Browser');
+                
+                if (needed.length > 0) {
+                    html += `<div class="needs-section">`;
+                    html += `<div class="needs-title">📋 Still need to determine:</div>`;
+                    html += `<ul class="needs-list">`;
+                    needed.forEach(n => html += `<li>${n}</li>`);
+                    html += `</ul></div>`;
+                }
+            }
+            
+            // Raw OCR text toggle
+            html += `<div class="raw-section">`;
+            html += `<button class="raw-toggle" onclick="toggleRawText()">Show raw OCR text ▼</button>`;
+            html += `<div class="raw-text" id="raw-text">${analysis.ocrText || '(no text detected)'}</div>`;
+            html += `</div>`;
+            
+            container.innerHTML = html;
+        }
+        
+        function toggleRawText() {
+            const raw = document.getElementById('raw-text');
+            raw.classList.toggle('visible');
+        }
+        
+        function renderHistory() {
+            if (analysisHistory.length < 2) {
+                document.getElementById('history-section').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('history-section').style.display = 'block';
+            const grid = document.getElementById('history-grid');
+            
+            grid.innerHTML = analysisHistory.map((a, i) => `
+                <img class="history-thumb" 
+                     src="${a.imageData}" 
+                     alt="Screenshot ${i+1}"
+                     onclick="reanalyze(${i})">
+            `).join('');
+        }
+        
+        function reanalyze(index) {
+            const analysis = analysisHistory[index];
+            showPreview(analysis.imageData);
+            renderAnalysisResults(analysis);
+        }
+        
+        function renderKnowledgeBase() {
+            const games = Object.values(knowledgeBase);
+            if (games.length === 0) {
+                document.getElementById('knowledge-section').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('knowledge-section').style.display = 'block';
+            const grid = document.getElementById('knowledge-grid');
+            
+            grid.innerHTML = games.map(kb => {
+                const statCount = Object.keys(kb.stats).length;
+                const hasRequired = kb.stats.currentStreak || kb.stats.played;
+                const status = hasRequired && kb.platform ? 'complete' : 'partial';
+                
+                return `
+                    <div class="knowledge-item">
+                        <div class="game-info">
+                            <span class="game-icon">${kb.game.icon}</span>
+                            <div>
+                                <div class="game-name">${kb.game.name}</div>
+                                <div class="game-details">
+                                    ${statCount} stats • ${kb.screenshots} screenshots
+                                    ${kb.platform ? ' • ' + (kb.platform === 'app' ? '📱' : '🌐') : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="status ${status}">${status === 'complete' ? 'Ready' : 'Partial'}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function clearHistory() {
+            analysisHistory = [];
+            knowledgeBase = {};
+            localStorage.removeItem('screenshot_knowledge');
+            renderHistory();
+            renderKnowledgeBase();
+        }
+        
+        // ============ START ============
+        init();
+    </script>
+</body>
+</html>
