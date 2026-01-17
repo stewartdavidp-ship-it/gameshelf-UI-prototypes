@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Game Shelf - Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --bg: #0a0a0f;
+            --surface: #16161f;
+            --surface-2: #1e1e2a;
+            --border: #2a2a3a;
+            --text: #e8e6e3;
+            --text-muted: #8a8a9a;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --success: #22c55e;
+            --success-glow: rgba(34, 197, 94, 0.15);
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow-x: hidden;
+        }
+        
+        .screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 20px;
+            padding-bottom: 40px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .screen.active { display: flex; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 16px 0;
+        }
+        
+        .header-icon { font-size: 48px; margin-bottom: 12px; }
+        .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .header p { color: var(--text-muted); font-size: 15px; line-height: 1.4; }
+        
+        /* Progress */
+        .progress-bar {
+            display: flex;
+            gap: 6px;
+            padding: 12px 0;
+        }
+        
+        .progress-step {
+            flex: 1;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            transition: background 0.3s;
+        }
+        
+        .progress-step.active { background: var(--primary); }
+        .progress-step.complete { background: var(--success); }
+        
+        /* Buttons */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 24px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+        .btn-ghost { background: transparent; color: var(--text-muted); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
+        
+        .spacer { flex: 1; }
+        
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: auto;
+            padding-top: 20px;
+        }
+        
+        .back-link {
+            color: var(--text-muted);
+            font-size: 14px;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+        }
+        
+        /* Game Grid */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 16px 0;
+        }
+        
+        .game-btn {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .game-btn:active, .game-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+        }
+        
+        .game-btn .icon { font-size: 26px; margin-bottom: 4px; }
+        .game-btn .name { font-size: 12px; font-weight: 600; }
+        .game-btn .publisher { font-size: 10px; color: var(--text-muted); }
+        
+        .game-btn .check {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .game-btn.selected .check { display: flex; }
+        
+        /* Publisher Groups */
+        .publisher-group {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .publisher-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .publisher-header .logo { font-size: 24px; }
+        .publisher-header h3 { font-size: 16px; font-weight: 600; }
+        .publisher-header .count {
+            margin-left: auto;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        .publisher-games {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .mini-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--surface-2);
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        
+        /* Option Row */
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .option-row:last-child { margin-bottom: 0; }
+        
+        .option-label {
+            font-size: 14px;
+            min-width: 100px;
+        }
+        
+        .option-toggle {
+            display: flex;
+            flex: 1;
+            background: var(--surface-2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .toggle-btn {
+            flex: 1;
+            padding: 10px 12px;
+            text-align: center;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+        }
+        
+        .toggle-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Enhancement Card */
+        .enhance-card {
+            background: linear-gradient(135deg, var(--surface) 0%, var(--primary-glow) 100%);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin: 16px 0;
+        }
+        
+        .enhance-card h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .enhance-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 16px;
+        }
+        
+        .enhance-benefits {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .benefit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .benefit .icon { color: var(--success); }
+        
+        /* Screenshot Flow */
+        .screenshot-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .screenshot-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .screenshot-card-header .icon { font-size: 32px; }
+        .screenshot-card-header h3 { font-size: 16px; }
+        .screenshot-card-header .status {
+            margin-left: auto;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: var(--surface-2);
+        }
+        
+        .screenshot-card-header .status.done {
+            background: var(--success-glow);
+            color: var(--success);
+        }
+        
+        .screenshot-instructions {
+            background: var(--surface-2);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .screenshot-instructions p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        
+        .screenshot-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .screenshot-actions .btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 14px;
+        }
+        
+        /* Launch Feedback */
+        .launch-feedback {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .launch-feedback h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .launch-feedback p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .feedback-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .feedback-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--surface-2);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .feedback-btn:active {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+        }
+        
+        .feedback-btn .icon { font-size: 24px; }
+        .feedback-btn .text h4 { font-size: 15px; margin-bottom: 2px; }
+        .feedback-btn .text p { font-size: 12px; color: var(--text-muted); }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .upload-area:active {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+        }
+        
+        .upload-area.has-image {
+            padding: 10px;
+            border-style: solid;
+            border-color: var(--success);
+        }
+        
+        .upload-area .icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-area p { font-size: 14px; color: var(--text-muted); }
+        
+        .upload-preview {
+            max-width: 100%;
+            max-height: 180px;
+            border-radius: var(--radius-sm);
+            object-fit: contain;
+        }
+        
+        #file-input { display: none; }
+        
+        /* Stats Preview */
+        .stats-preview {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 16px 0;
+        }
+        
+        .stat-box {
+            background: var(--surface-2);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+        
+        .stat-box .value { font-size: 24px; font-weight: 700; color: var(--primary); }
+        .stat-box .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+        
+        /* Sharing */
+        .sharing-option {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        
+        .sharing-option:active, .sharing-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+        }
+        
+        .sharing-option .icon { font-size: 24px; }
+        .sharing-option .text { flex: 1; }
+        .sharing-option .text h4 { font-size: 15px; }
+        .sharing-option .text p { font-size: 12px; color: var(--text-muted); }
+        .sharing-option .check {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .sharing-option.selected .check {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .social-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 16px 0;
+        }
+        
+        .social-btn {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .social-btn:active, .social-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+        }
+        
+        .social-btn .icon { font-size: 24px; margin-bottom: 2px; }
+        .social-btn .name { font-size: 10px; }
+        
+        /* Final List */
+        .final-game {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .final-game .icon { font-size: 28px; }
+        .final-game .info { flex: 1; }
+        .final-game .name { font-size: 15px; font-weight: 500; }
+        .final-game .meta { font-size: 12px; color: var(--text-muted); }
+        .final-game .launch { font-size: 20px; opacity: 0.6; cursor: pointer; }
+        
+        /* Success */
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 20px auto;
+            animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Loading */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading p { margin-top: 14px; color: var(--text-muted); }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin: 20px 0 12px;
+        }
+        
+        /* Scrollable content */
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            margin: 0 -20px;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== SCREEN 1: WELCOME ========== -->
+<div class="screen active" id="screen-welcome">
+    <div class="progress-bar">
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+    </div>
+    
+    <div class="header">
+        <div class="header-icon">🎮</div>
+        <h1>Welcome to Game Shelf</h1>
+        <p>Track all your daily puzzles in one place. Let's get you set up in about 2 minutes.</p>
+    </div>
+    
+    <div class="spacer"></div>
+    
+    <div class="actions">
+        <button class="btn btn-primary" onclick="goToScreen('screen-select-games')">
+            Let's Go →
+        </button>
+    </div>
+</div>
+
+<!-- ========== SCREEN 2: SELECT GAMES ========== -->
+<div class="screen" id="screen-select-games">
+    <div class="progress-bar">
+        <div class="progress-step complete"></div>
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+    </div>
+    
+    <div class="header">
+        <h1>What do you play?</h1>
+        <p>Select all the daily games you play</p>
+    </div>
+    
+    <div class="scroll-content">
+        <div class="game-grid" id="game-grid"></div>
+    </div>
+    
+    <div class="actions">
+        <button class="btn btn-primary" id="btn-games-next" onclick="goToAccessConfig()" disabled>
+            Next: Configure Access
+        </button>
+        <div class="back-link" onclick="goToScreen('screen-welcome')">← Back</div>
+    </div>
+</div>
+
+<!-- ========== SCREEN 3: ACCESS CONFIG ========== -->
+<div class="screen" id="screen-access-config">
+    <div class="progress-bar">
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+    </div>
+    
+    <div class="header">
+        <h1>How do you play?</h1>
+        <p>Tell us how you access each publisher's games</p>
+    </div>
+    
+    <div class="scroll-content" id="publisher-config-container">
+        <!-- Filled by JS -->
+    </div>
+    
+    <div class="actions">
+        <button class="btn btn-primary" onclick="goToEnhance()">
+            Next →
+        </button>
+        <div class="back-link" onclick="goToScreen('screen-select-games')">← Back</div>
+    </div>
+</div>
+
+<!-- ========== SCREEN 4: ENHANCE OFFER ========== -->
+<div class="screen" id="screen-enhance">
+    <div class="progress-bar">
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+    </div>
+    
+    <div class="header">
+        <h1>Import Your Stats?</h1>
+        <p>We can pull in your existing progress</p>
+    </div>
+    
+    <div class="enhance-card">
+        <h3>📊 Screenshot Import</h3>
+        <p>We'll open each game's stats screen using your preferences. Just screenshot and upload to import:</p>
+        <div class="enhance-benefits">
+            <div class="benefit"><span class="icon">✓</span> Current streak</div>
+            <div class="benefit"><span class="icon">✓</span> Games played</div>
+            <div class="benefit"><span class="icon">✓</span> Win percentage</div>
+            <div class="benefit"><span class="icon">✓</span> Max streak</div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted);">This also helps us verify your launch URLs work correctly.</p>
+    </div>
+    
+    <div class="spacer"></div>
+    
+    <div class="actions">
+        <button class="btn btn-primary" onclick="startScreenshotFlow()">
+            Yes, Import Stats
+        </button>
+        <button class="btn btn-ghost" onclick="goToSharing()">
+            Skip for now
+        </button>
+    </div>
+</div>
+
+<!-- ========== SCREEN 5: SCREENSHOT FLOW ========== -->
+<div class="screen" id="screen-screenshot-flow">
+    <div class="progress-bar">
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+    </div>
+    
+    <div class="header">
+        <h1 id="screenshot-flow-title">Import Stats</h1>
+        <p id="screenshot-flow-subtitle">Game 1 of 3</p>
+    </div>
+    
+    <div class="scroll-content" id="screenshot-flow-content">
+        <!-- Filled by JS based on current game -->
+    </div>
+    
+    <div class="actions" id="screenshot-flow-actions">
+        <!-- Dynamic buttons -->
+    </div>
+</div>
+
+<!-- ========== SCREEN 6: LAUNCH FEEDBACK ========== -->
+<div class="screen" id="screen-launch-feedback">
+    <div class="progress-bar">
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+    </div>
+    
+    <div class="launch-feedback">
+        <h3 id="feedback-title">Did Wordle open?</h3>
+        <p id="feedback-subtitle">We tried to open your stats screen</p>
+        
+        <div class="feedback-options">
+            <div class="feedback-btn" onclick="launchFeedback('success')">
+                <span class="icon">✅</span>
+                <div class="text">
+                    <h4>Yes, it opened!</h4>
+                    <p>I can see my stats screen</p>
+                </div>
+            </div>
+            <div class="feedback-btn" onclick="launchFeedback('wrong-screen')">
+                <span class="icon">🔀</span>
+                <div class="text">
+                    <h4>Wrong screen</h4>
+                    <p>It opened but not to stats</p>
+                </div>
+            </div>
+            <div class="feedback-btn" onclick="launchFeedback('didnt-open')">
+                <span class="icon">❌</span>
+                <div class="text">
+                    <h4>Didn't open</h4>
+                    <p>Nothing happened or got an error</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="spacer"></div>
+    
+    <div class="actions">
+        <div class="back-link" onclick="skipCurrentGame()">Skip this game</div>
+    </div>
+</div>
+
+<!-- ========== SCREEN 7: UPLOAD SCREENSHOT ========== -->
+<div class="screen" id="screen-upload">
+    <div class="progress-bar">
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+    </div>
+    
+    <div class="header">
+        <h1 id="upload-title">📸 Screenshot Wordle</h1>
+        <p>Take a screenshot of your stats, then upload it here</p>
+    </div>
+    
+    <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+        <div class="icon">📷</div>
+        <p>Tap to upload screenshot</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(event)">
+    
+    <div id="stats-result" style="display: none;">
+        <div class="section-title">Stats Found</div>
+        <div class="stats-preview" id="stats-preview"></div>
+    </div>
+    
+    <div class="spacer"></div>
+    
+    <div class="actions">
+        <button class="btn btn-primary" id="btn-save-stats" onclick="saveStatsAndNext()" disabled>
+            Save & Continue
+        </button>
+        <div class="back-link" onclick="skipCurrentGame()">Skip this game</div>
+    </div>
+</div>
+
+<!-- ========== SCREEN 8: SHARING ========== -->
+<div class="screen" id="screen-sharing">
+    <div class="progress-bar">
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step active"></div>
+    </div>
+    
+    <div class="header">
+        <h1>How do you share?</h1>
+        <p>We'll customize your sharing experience</p>
+    </div>
+    
+    <div class="scroll-content">
+        <div id="sharing-methods">
+            <div class="sharing-option" onclick="toggleSharing('copy', this)">
+                <span class="icon">📋</span>
+                <div class="text">
+                    <h4>Copy & Paste</h4>
+                    <p>Share emoji grids as text</p>
+                </div>
+                <span class="check">✓</span>
+            </div>
+            <div class="sharing-option" onclick="toggleSharing('image', this)">
+                <span class="icon">🖼️</span>
+                <div class="text">
+                    <h4>Share as Image</h4>
+                    <p>Create shareable graphics</p>
+                </div>
+                <span class="check">✓</span>
+            </div>
+            <div class="sharing-option" onclick="toggleSharing('none', this)">
+                <span class="icon">🔇</span>
+                <div class="text">
+                    <h4>I don't share</h4>
+                    <p>Just track my progress</p>
+                </div>
+                <span class="check">✓</span>
+            </div>
+        </div>
+        
+        <div id="social-section" style="display: none;">
+            <div class="section-title">Where do you share?</div>
+            <div class="social-grid" id="social-grid"></div>
+        </div>
+    </div>
+    
+    <div class="actions">
+        <button class="btn btn-primary" onclick="finishSetup()">
+            Finish Setup
+        </button>
+        <div class="back-link" onclick="skipSharing()">Skip</div>
+    </div>
+</div>
+
+<!-- ========== SCREEN 9: COMPLETE ========== -->
+<div class="screen" id="screen-complete">
+    <div class="progress-bar">
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+        <div class="progress-step complete"></div>
+    </div>
+    
+    <div class="header">
+        <div class="success-icon">✓</div>
+        <h1>You're All Set!</h1>
+        <p id="complete-summary">5 games ready to track</p>
+    </div>
+    
+    <div class="scroll-content">
+        <div class="section-title">Your Games</div>
+        <div id="final-games-list"></div>
+    </div>
+    
+    <div class="actions">
+        <button class="btn btn-success" onclick="openGameShelf()">
+            🎮 Open Game Shelf
+        </button>
+    </div>
+</div>
+
+<!-- ========== SCREEN: ANALYZING ========== -->
+<div class="screen" id="screen-analyzing">
+    <div class="spacer"></div>
+    <div class="loading">
+        <div class="spinner"></div>
+        <p id="analyzing-status">Analyzing screenshot...</p>
+    </div>
+    <div class="spacer"></div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+// ============ GAME DATABASE ============
+const GAMES = {
+    // NYT
+    wordle: { 
+        name: 'Wordle', icon: '🟩', publisher: 'NYT',
+        statsScreen: 'Tap 📊 after completing puzzle',
+        urls: {
+            browser: { direct: 'https://www.nytimes.com/games/wordle', hub: 'https://www.nytimes.com/games' },
+            app: { direct: 'nytimes://games/wordle', hub: 'nytimes://games' }
+        }
+    },
+    connections: { 
+        name: 'Connections', icon: '🔗', publisher: 'NYT',
+        statsScreen: 'Tap "View Stats" after solving',
+        urls: {
+            browser: { direct: 'https://www.nytimes.com/games/connections', hub: 'https://www.nytimes.com/games' },
+            app: { direct: 'nytimes://games/connections', hub: 'nytimes://games' }
+        }
+    },
+    strands: { 
+        name: 'Strands', icon: '🧵', publisher: 'NYT',
+        statsScreen: 'Results screen after completing',
+        urls: {
+            browser: { direct: 'https://www.nytimes.com/games/strands', hub: 'https://www.nytimes.com/games' },
+            app: { direct: 'nytimes://games/strands', hub: 'nytimes://games' }
+        }
+    },
+    'spelling-bee': { 
+        name: 'Spelling Bee', icon: '🐝', publisher: 'NYT',
+        statsScreen: 'Shows rank (Genius, Queen Bee)',
+        urls: {
+            browser: { direct: 'https://www.nytimes.com/puzzles/spelling-bee', hub: 'https://www.nytimes.com/games' },
+            app: { direct: 'nytimes://puzzles/spelling-bee', hub: 'nytimes://games' }
+        }
+    },
+    mini: { 
+        name: 'Mini', icon: '✏️', publisher: 'NYT',
+        statsScreen: 'Completion time after solving',
+        urls: {
+            browser: { direct: 'https://www.nytimes.com/crosswords/game/mini', hub: 'https://www.nytimes.com/games' },
+            app: { direct: 'nytimes://crosswords/game/mini', hub: 'nytimes://games' }
+        }
+    },
+    // LinkedIn
+    queens: { 
+        name: 'Queens', icon: '👑', publisher: 'LinkedIn',
+        statsScreen: 'Results after completing',
+        urls: {
+            browser: { direct: 'https://www.linkedin.com/games/queens', hub: 'https://www.linkedin.com/games' },
+            app: { direct: 'linkedin://games/queens', hub: 'linkedin://games' }
+        }
+    },
+    tango: { 
+        name: 'Tango', icon: '🎵', publisher: 'LinkedIn',
+        statsScreen: 'Results after completing',
+        urls: {
+            browser: { direct: 'https://www.linkedin.com/games/tango', hub: 'https://www.linkedin.com/games' },
+            app: { direct: 'linkedin://games/tango', hub: 'linkedin://games' }
+        }
+    },
+    pinpoint: { 
+        name: 'Pinpoint', icon: '🎯', publisher: 'LinkedIn',
+        statsScreen: 'Shows clues used',
+        urls: {
+            browser: { direct: 'https://www.linkedin.com/games/pinpoint', hub: 'https://www.linkedin.com/games' },
+            app: { direct: 'linkedin://games/pinpoint', hub: 'linkedin://games' }
+        }
+    },
+    crossclimb: { 
+        name: 'Crossclimb', icon: '🪜', publisher: 'LinkedIn',
+        statsScreen: 'Time after completing',
+        urls: {
+            browser: { direct: 'https://www.linkedin.com/games/crossclimb', hub: 'https://www.linkedin.com/games' },
+            app: { direct: 'linkedin://games/crossclimb', hub: 'linkedin://games' }
+        }
+    },
+    zip: { 
+        name: 'Zip', icon: '⚡', publisher: 'LinkedIn',
+        statsScreen: 'Results after completing',
+        urls: {
+            browser: { direct: 'https://www.linkedin.com/games/zip', hub: 'https://www.linkedin.com/games' },
+            app: { direct: 'linkedin://games/zip', hub: 'linkedin://games' }
+        }
+    },
+    // Other
+    quordle: { 
+        name: 'Quordle', icon: '4️⃣', publisher: 'Merriam-Webster',
+        statsScreen: 'Results grid after all 4 words',
+        urls: {
+            browser: { direct: 'https://www.merriam-webster.com/games/quordle', hub: 'https://www.merriam-webster.com/games' },
+            app: { direct: 'https://www.merriam-webster.com/games/quordle', hub: 'https://www.merriam-webster.com/games' }
+        }
+    }
+};
+
+const PUBLISHERS = {
+    'NYT': { name: 'New York Times', icon: '📰', hasSubscription: true },
+    'LinkedIn': { name: 'LinkedIn', icon: '💼', hasSubscription: false },
+    'Merriam-Webster': { name: 'Merriam-Webster', icon: '📖', hasSubscription: false }
+};
+
+const SOCIALS = [
+    { id: 'imessage', name: 'iMessage', icon: '💬' },
+    { id: 'twitter', name: 'X', icon: '𝕏' },
+    { id: 'threads', name: 'Threads', icon: '🧵' },
+    { id: 'facebook', name: 'Facebook', icon: '📘' },
+    { id: 'discord', name: 'Discord', icon: '🎮' },
+    { id: 'slack', name: 'Slack', icon: '💼' },
+    { id: 'whatsapp', name: 'WhatsApp', icon: '💚' },
+    { id: 'other', name: 'Other', icon: '➕' }
+];
+
+const STAT_PATTERNS = {
+    played: [/(\d+)\s+played/i, /played\s*[:\s]*(\d+)/i],
+    winPercent: [/(\d+)\s*%?\s*win\s*%?/i, /win\s*%?\s*(\d+)/i],
+    streak: [/(\d+)\s+current\s+streak/i, /current\s+streak\s+(\d+)/i],
+    maxStreak: [/(\d+)\s+max\s+streak/i, /max\s+streak\s+(\d+)/i]
+};
+
+// ============ STATE ============
+let selectedGames = new Set();
+let publisherConfig = {}; // { 'NYT': { platform: 'browser', launchType: 'hub', subscription: true } }
+let gameConfigs = []; // Final array of game configs
+let screenshotQueue = []; // Games to screenshot
+let currentScreenshotIndex = 0;
+let currentImage = null;
+let currentStats = {};
+let sharingMethods = new Set();
+let socialPlatforms = new Set();
+let launchFeedbackData = {}; // Track what worked/didn't
+
+// ============ INIT ============
+function init() {
+    renderGameGrid();
+    renderSocialGrid();
+}
+
+function renderGameGrid() {
+    const grid = document.getElementById('game-grid');
+    grid.innerHTML = Object.entries(GAMES).map(([id, g]) => `
+        <div class="game-btn" data-game="${id}" onclick="toggleGame('${id}', this)">
+            <div class="icon">${g.icon}</div>
+            <div class="name">${g.name}</div>
+            <div class="publisher">${g.publisher}</div>
+            <div class="check">✓</div>
+        </div>
+    `).join('');
+}
+
+function renderSocialGrid() {
+    document.getElementById('social-grid').innerHTML = SOCIALS.map(s => `
+        <div class="social-btn" data-social="${s.id}" onclick="toggleSocial('${s.id}', this)">
+            <div class="icon">${s.icon}</div>
+            <div class="name">${s.name}</div>
+        </div>
+    `).join('');
+}
+
+// ============ NAVIGATION ============
+function goToScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+// ============ SCREEN 2: SELECT GAMES ============
+function toggleGame(gameId, el) {
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) {
+        selectedGames.add(gameId);
+    } else {
+        selectedGames.delete(gameId);
+    }
+    document.getElementById('btn-games-next').disabled = selectedGames.size === 0;
+}
+
+// ============ SCREEN 3: ACCESS CONFIG ============
+function goToAccessConfig() {
+    // Group selected games by publisher
+    const byPublisher = {};
+    selectedGames.forEach(gameId => {
+        const pub = GAMES[gameId].publisher;
+        if (!byPublisher[pub]) byPublisher[pub] = [];
+        byPublisher[pub].push(gameId);
+    });
+    
+    // Initialize config with defaults
+    Object.keys(byPublisher).forEach(pub => {
+        publisherConfig[pub] = {
+            platform: 'browser',
+            launchType: 'hub',
+            subscription: pub === 'NYT' ? null : undefined
+        };
+    });
+    
+    // Render config UI
+    const container = document.getElementById('publisher-config-container');
+    container.innerHTML = Object.entries(byPublisher).map(([pub, games]) => {
+        const pubInfo = PUBLISHERS[pub];
+        return `
+            <div class="publisher-group" data-publisher="${pub}">
+                <div class="publisher-header">
+                    <span class="logo">${pubInfo.icon}</span>
+                    <h3>${pubInfo.name}</h3>
+                    <span class="count">${games.length} game${games.length > 1 ? 's' : ''}</span>
+                </div>
+                <div class="publisher-games">
+                    ${games.map(gid => `<span class="mini-chip">${GAMES[gid].icon} ${GAMES[gid].name}</span>`).join('')}
+                </div>
+                
+                <div class="option-row">
+                    <span class="option-label">Play on</span>
+                    <div class="option-toggle">
+                        <button class="toggle-btn active" onclick="setPublisherOption('${pub}', 'platform', 'browser', this)">🌐 Browser</button>
+                        <button class="toggle-btn" onclick="setPublisherOption('${pub}', 'platform', 'app', this)">📱 App</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <span class="option-label">Open via</span>
+                    <div class="option-toggle">
+                        <button class="toggle-btn active" onclick="setPublisherOption('${pub}', 'launchType', 'hub', this)">🏠 Hub</button>
+                        <button class="toggle-btn" onclick="setPublisherOption('${pub}', 'launchType', 'direct', this)">🎯 Direct</button>
+                    </div>
+                </div>
+                
+                ${pubInfo.hasSubscription ? `
+                <div class="option-row">
+                    <span class="option-label">Subscription</span>
+                    <div class="option-toggle">
+                        <button class="toggle-btn" onclick="setPublisherOption('${pub}', 'subscription', true, this)">✅ Yes</button>
+                        <button class="toggle-btn" onclick="setPublisherOption('${pub}', 'subscription', false, this)">🆓 No</button>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    goToScreen('screen-access-config');
+}
+
+function setPublisherOption(publisher, option, value, el) {
+    publisherConfig[publisher][option] = value;
+    
+    // Update toggle UI
+    el.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+}
+
+// ============ SCREEN 4: ENHANCE OFFER ============
+function goToEnhance() {
+    // Build game configs from selections
+    gameConfigs = [];
+    selectedGames.forEach(gameId => {
+        const game = GAMES[gameId];
+        const config = publisherConfig[game.publisher];
+        const urls = game.urls[config.platform];
+        
+        gameConfigs.push({
+            gameId,
+            name: game.name,
+            icon: game.icon,
+            publisher: game.publisher,
+            platform: config.platform,
+            launchType: config.launchType,
+            subscription: config.subscription,
+            launchUrl: urls[config.launchType],
+            fallbackUrl: urls.direct !== urls[config.launchType] ? urls.direct : null,
+            stats: {},
+            urlVerified: false
+        });
+    });
+    
+    goToScreen('screen-enhance');
+}
+
+// ============ SCREEN 5: SCREENSHOT FLOW ============
+function startScreenshotFlow() {
+    screenshotQueue = [...gameConfigs];
+    currentScreenshotIndex = 0;
+    showCurrentGameScreenshot();
+}
+
+function showCurrentGameScreenshot() {
+    if (currentScreenshotIndex >= screenshotQueue.length) {
+        goToSharing();
+        return;
+    }
+    
+    const game = screenshotQueue[currentScreenshotIndex];
+    const gameData = GAMES[game.gameId];
+    
+    document.getElementById('screenshot-flow-title').textContent = `${game.icon} ${game.name}`;
+    document.getElementById('screenshot-flow-subtitle').textContent = 
+        `Game ${currentScreenshotIndex + 1} of ${screenshotQueue.length}`;
+    
+    document.getElementById('screenshot-flow-content').innerHTML = `
+        <div class="screenshot-card">
+            <div class="screenshot-card-header">
+                <span class="icon">${game.icon}</span>
+                <h3>${game.name}</h3>
+            </div>
+            
+            <div class="screenshot-instructions">
+                <p><strong>Stats screen:</strong> ${gameData.statsScreen}</p>
+                <p style="margin-top: 8px; font-size: 12px;">
+                    Will open: ${game.platform === 'app' ? '📱 App' : '🌐 Browser'} 
+                    → ${game.launchType === 'hub' ? 'Games Hub' : 'Direct link'}
+                </p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('screenshot-flow-actions').innerHTML = `
+        <button class="btn btn-primary" onclick="launchForScreenshot()">
+            🚀 Open ${game.name}
+        </button>
+        <div class="back-link" onclick="skipCurrentGame()">Skip this game</div>
+    `;
+    
+    goToScreen('screen-screenshot-flow');
+}
+
+function launchForScreenshot() {
+    const game = screenshotQueue[currentScreenshotIndex];
+    
+    // Try to launch
+    const url = game.launchUrl;
+    
+    // For app deep links, try iframe method
+    if (url.includes('://') && !url.startsWith('http')) {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = url;
+        document.body.appendChild(iframe);
+        
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+            // Also open web fallback
+            if (game.fallbackUrl) {
+                window.open(game.fallbackUrl, '_blank');
+            }
+        }, 1500);
+    } else {
+        window.open(url, '_blank');
+    }
+    
+    // Show feedback screen
+    document.getElementById('feedback-title').textContent = `Did ${game.name} open?`;
+    goToScreen('screen-launch-feedback');
+}
+
+function launchFeedback(result) {
+    const game = screenshotQueue[currentScreenshotIndex];
+    
+    // Record feedback
+    launchFeedbackData[game.gameId] = {
+        result,
+        url: game.launchUrl,
+        platform: game.platform,
+        launchType: game.launchType
+    };
+    
+    if (result === 'success') {
+        game.urlVerified = true;
+        showUploadScreen();
+    } else if (result === 'wrong-screen') {
+        // URL works but wrong destination - still let them screenshot
+        game.urlVerified = true;
+        showUploadScreen();
+    } else {
+        // Didn't open - try fallback or skip
+        if (game.fallbackUrl && game.fallbackUrl !== game.launchUrl) {
+            game.launchUrl = game.fallbackUrl;
+            alert(`Let's try a different URL. Tap "Open ${game.name}" again.`);
+            showCurrentGameScreenshot();
+        } else {
+            alert(`We'll skip ${game.name} for now. You can set it up later in Settings.`);
+            skipCurrentGame();
+        }
+    }
+}
+
+function showUploadScreen() {
+    const game = screenshotQueue[currentScreenshotIndex];
+    
+    document.getElementById('upload-title').textContent = `📸 Screenshot ${game.name}`;
+    
+    // Reset upload area
+    const uploadArea = document.getElementById('upload-area');
+    uploadArea.classList.remove('has-image');
+    uploadArea.innerHTML = `<div class="icon">📷</div><p>Tap to upload screenshot</p>`;
+    document.getElementById('file-input').value = '';
+    document.getElementById('stats-result').style.display = 'none';
+    document.getElementById('btn-save-stats').disabled = true;
+    currentImage = null;
+    currentStats = {};
+    
+    goToScreen('screen-upload');
+}
+
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        currentImage = e.target.result;
+        
+        const uploadArea = document.getElementById('upload-area');
+        uploadArea.classList.add('has-image');
+        uploadArea.innerHTML = `<img src="${currentImage}" class="upload-preview">`;
+        
+        // Analyze
+        goToScreen('screen-analyzing');
+        try {
+            const result = await Tesseract.recognize(currentImage, 'eng', {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        document.getElementById('analyzing-status').textContent = 
+                            `Analyzing... ${Math.round(m.progress * 100)}%`;
+                    }
+                }
+            });
+            
+            currentStats = extractStats(result.data.text);
+            showStatsResult();
+            goToScreen('screen-upload');
+            
+        } catch (err) {
+            console.error(err);
+            alert('Error analyzing. Try again or skip.');
+            goToScreen('screen-upload');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function extractStats(text) {
+    const stats = {};
+    for (const [id, patterns] of Object.entries(STAT_PATTERNS)) {
+        for (const p of patterns) {
+            const m = text.match(p);
+            if (m?.[1]) { stats[id] = parseInt(m[1]); break; }
+        }
+    }
+    return stats;
+}
+
+function showStatsResult() {
+    const hasStats = Object.keys(currentStats).length > 0;
+    
+    if (hasStats) {
+        let html = '';
+        if (currentStats.played) html += `<div class="stat-box"><div class="value">${currentStats.played}</div><div class="label">Played</div></div>`;
+        if (currentStats.winPercent) html += `<div class="stat-box"><div class="value">${currentStats.winPercent}%</div><div class="label">Win %</div></div>`;
+        if (currentStats.streak) html += `<div class="stat-box"><div class="value">${currentStats.streak}</div><div class="label">Streak</div></div>`;
+        if (currentStats.maxStreak) html += `<div class="stat-box"><div class="value">${currentStats.maxStreak}</div><div class="label">Max</div></div>`;
+        
+        document.getElementById('stats-preview').innerHTML = html;
+        document.getElementById('stats-result').style.display = 'block';
+    }
+    
+    document.getElementById('btn-save-stats').disabled = false;
+}
+
+function saveStatsAndNext() {
+    const game = screenshotQueue[currentScreenshotIndex];
+    
+    // Save stats to game config
+    const configIndex = gameConfigs.findIndex(g => g.gameId === game.gameId);
+    if (configIndex >= 0) {
+        gameConfigs[configIndex].stats = currentStats;
+        gameConfigs[configIndex].urlVerified = true;
+    }
+    
+    // Next game
+    currentScreenshotIndex++;
+    showCurrentGameScreenshot();
+}
+
+function skipCurrentGame() {
+    currentScreenshotIndex++;
+    showCurrentGameScreenshot();
+}
+
+// ============ SCREEN 8: SHARING ============
+function goToSharing() {
+    goToScreen('screen-sharing');
+}
+
+function toggleSharing(method, el) {
+    if (method === 'none') {
+        sharingMethods.clear();
+        sharingMethods.add('none');
+        document.querySelectorAll('#sharing-methods .sharing-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('social-section').style.display = 'none';
+    } else {
+        sharingMethods.delete('none');
+        document.querySelector('#sharing-methods .sharing-option:last-child').classList.remove('selected');
+        
+        if (sharingMethods.has(method)) {
+            sharingMethods.delete(method);
+            el.classList.remove('selected');
+        } else {
+            sharingMethods.add(method);
+            el.classList.add('selected');
+        }
+        
+        document.getElementById('social-section').style.display = 
+            sharingMethods.size > 0 ? 'block' : 'none';
+    }
+}
+
+function toggleSocial(id, el) {
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) socialPlatforms.add(id);
+    else socialPlatforms.delete(id);
+}
+
+function skipSharing() {
+    finishSetup();
+}
+
+// ============ SCREEN 9: COMPLETE ============
+function finishSetup() {
+    // Save everything
+    const config = {
+        games: gameConfigs,
+        publisherConfig,
+        sharing: {
+            methods: [...sharingMethods],
+            platforms: [...socialPlatforms]
+        },
+        launchFeedback: launchFeedbackData,
+        setupDate: new Date().toISOString()
+    };
+    
+    localStorage.setItem('gameshelf_config', JSON.stringify(config));
+    localStorage.setItem('gameshelf_games', JSON.stringify(gameConfigs));
+    localStorage.setItem('gameshelf_setup_complete', 'true');
+    
+    // Show complete screen
+    document.getElementById('complete-summary').textContent = 
+        `${gameConfigs.length} game${gameConfigs.length !== 1 ? 's' : ''} ready to track`;
+    
+    document.getElementById('final-games-list').innerHTML = gameConfigs.map(g => `
+        <div class="final-game">
+            <span class="icon">${g.icon}</span>
+            <div class="info">
+                <div class="name">${g.name}</div>
+                <div class="meta">
+                    ${g.platform === 'app' ? '📱' : '🌐'} ${g.launchType === 'hub' ? 'Hub' : 'Direct'}
+                    ${g.urlVerified ? '✓' : ''}
+                    ${g.stats.streak ? `· 🔥 ${g.stats.streak}` : ''}
+                </div>
+            </div>
+            <span class="launch" onclick="window.open('${g.launchUrl}', '_blank')">🚀</span>
+        </div>
+    `).join('');
+    
+    goToScreen('screen-complete');
+    
+    console.log('Setup complete:', config);
+}
+
+function openGameShelf() {
+    alert('🎮 Game Shelf is ready!\n\n' + gameConfigs.map(g => 
+        `${g.icon} ${g.name} ${g.stats.streak ? '🔥' + g.stats.streak : ''}`
+    ).join('\n'));
+}
+
+// Init
+init();
+</script>
+</body>
+</html>
